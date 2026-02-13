@@ -7,6 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-fnred: var(--red);
+  --color-fnredb: var(--redb);
+  --color-fnblue: var(--blue);
+  --color-fnblueb: var(--blueb);
+  --color-fngreen: var(--green);
+  --color-fnyellow: var(--yellow);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -50,6 +56,12 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --red: #BC2C1A;
+  --redb: #902214;
+  --blue: #2772A0;
+  --blueb: #1C5273;
+  --green: #009E60;
+  --yellow: #F5D000;
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -122,7 +134,11 @@
     @apply border-border outline-ring/50;
   }
   body {
+    @apply bg-background text-foreground font-mono;
     @apply bg-background text-foreground;
-    @apply bg-background text-foreground;
+  }
+
+  .fnconatiner {
+    @apply container mx-auto max-w-7xl px-4;
   }
 }
