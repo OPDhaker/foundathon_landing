@@ -27,7 +27,7 @@ export default function RegistrationSuccessPage() {
       <div className="absolute -top-24 -right-16 size-80 rounded-full bg-fngreen/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-fnblue/20 blur-3xl pointer-events-none" />
       <div className="fncontainer relative py-16 md:py-24">
-        <section className="rounded-2xl border border-foreground/10 bg-background/95 p-8 md:p-10 shadow-xl border-b-4 border-fngreen relative overflow-hidden">
+        <section className="rounded-2xl border bg-background/95 p-8 md:p-10 shadow-xl border-b-4 border-fngreen relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-10 pointer-events-none bg-repeat bg-center"
             style={{ backgroundImage: "url(/textures/noise-main.svg)" }}
@@ -62,7 +62,7 @@ export default function RegistrationSuccessPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-xl border border-foreground/10 bg-gradient-to-b from-gray-100 to-gray-50 border-b-4 border-fnyellow p-5 text-center shadow-md"
+                  className="rounded-xl border bg-linear-to-b from-gray-100 to-gray-50 border-b-4 border-fnyellow p-5 text-center shadow-md"
                 >
                   <p className="text-5xl md:text-7xl font-black text-fnblue leading-none">
                     {item.value}

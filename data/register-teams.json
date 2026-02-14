@@ -1,1 +1,136 @@
-[]
+[
+  {
+    "id": "d9ba5340-c942-46ea-ab3e-5d8d161e5169",
+    "createdAt": "2026-02-14T19:28:17.470Z",
+    "updatedAt": "2026-02-14T19:28:17.470Z",
+    "teamType": "srm",
+    "teamName": "My Diet Coke",
+    "lead": {
+      "name": "Yatin Annam",
+      "raNumber": "RA2411030010101",
+      "netId": "ya8476",
+      "dept": "NWC",
+      "contact": 8867331342
+    },
+    "members": [
+      {
+        "name": "Mohak Jain",
+        "raNumber": "RA2511033010071",
+        "netId": "mj9007",
+        "dept": "CINTEL",
+        "contact": 8005849709
+      },
+      {
+        "name": "Om Pratap Dhaker",
+        "raNumber": "RA2511027010036",
+        "netId": "od7270",
+        "dept": "DSBS",
+        "contact": 9301161940
+      },
+      {
+        "name": "Shreya Kulkarni",
+        "raNumber": "RA2411030010105",
+        "netId": "sk3857",
+        "dept": "NWC",
+        "contact": 8754398762
+      },
+      {
+        "name": "Siddhant Pal",
+        "raNumber": "RA2511053010070",
+        "netId": "sp8493",
+        "dept": "ECE",
+        "contact": 9009009001
+      }
+    ]
+  },
+  {
+    "teamType": "srm",
+    "teamName": "Tdthfgj",
+    "lead": {
+      "name": "dffhngfhghnfgh",
+      "raNumber": "RA2511027010036",
+      "netId": "sd3634",
+      "dept": "DSBS",
+      "contact": 9301161940
+    },
+    "members": [
+      {
+        "name": "dfhdtdfhhdt",
+        "raNumber": "RA2511027010036",
+        "netId": "fd3467",
+        "dept": "CTECH",
+        "contact": 9301161940
+      },
+      {
+        "name": "gdtthrhrt",
+        "raNumber": "RA2511027010036",
+        "netId": "fg3444",
+        "dept": "CINTEL",
+        "contact": 2511027010
+      }
+    ],
+    "id": "5b5132c6-e49e-453e-a1ed-c7a6ca0cc4b8",
+    "createdAt": "2026-02-14T18:44:52.815Z",
+    "updatedAt": "2026-02-14T18:59:33.122Z"
+  },
+  {
+    "teamType": "non_srm",
+    "teamName": "Three Degree",
+    "collegeName": "Loyla Lauda",
+    "isClub": true,
+    "clubName": "Three Degree",
+    "lead": {
+      "name": "Name",
+      "collegeId": "jhdfbvhjdfbv",
+      "collegeEmail": "jshbvjhsfbvfhjdsbv@gmail.com",
+      "contact": 7878787878
+    },
+    "members": [
+      {
+        "name": "name 1",
+        "collegeId": "hebrgjhegrfejh",
+        "collegeEmail": "hiuhgiur@gmail.com",
+        "contact": 8787878787
+      },
+      {
+        "name": "sdhfjbhjsg",
+        "collegeId": "928jbfhv",
+        "collegeEmail": "sjdbv@gmail.com",
+        "contact": 3498734983
+      }
+    ],
+    "id": "6a455334-d056-446f-b1d8-ea4052dc3c9c",
+    "createdAt": "2026-02-14T16:49:28.282Z",
+    "updatedAt": "2026-02-14T16:54:52.211Z"
+  },
+  {
+    "teamType": "srm",
+    "teamName": "Team ORATIX",
+    "lead": {
+      "name": "Om Pratap Dhaker",
+      "raNumber": "RA2511027010036",
+      "netId": "od8289",
+      "dept": "DSBS",
+      "contact": 9301161940
+    },
+    "members": [
+      {
+        "name": "Archana Dhaker",
+        "raNumber": "RA2511027010032",
+        "netId": "ad4932",
+        "dept": "DSBS",
+        "contact": 8754458254
+      },
+      {
+        "name": "Uttam Singh",
+        "raNumber": "RA2711028010047",
+        "netId": "us2398",
+        "dept": "dsbs",
+        "contact": 9445002514
+      }
+    ],
+    "id": "7d91d753-b391-4ef2-837f-881d54119448",
+    "createdAt": "2026-02-14T16:47:14.023Z",
+    "updatedAt": "2026-02-14T16:47:48.723Z"
+  }
+]

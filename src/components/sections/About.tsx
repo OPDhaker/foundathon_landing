@@ -57,7 +57,7 @@ const About = () => {
           {problemHighlights.map((item) => (
             <div
               key={item.title}
-              className="rounded-xl bg-gray-100 border-b-4 border-fnblue border border-foreground/10 px-6 py-7 shadow-sm"
+              className="rounded-xl bg-gray-100 border-b-4 border-fnblue border px-6 py-7 shadow-sm"
             >
               <p className="text-xs uppercase tracking-[0.25em] text-fnblue font-bold">
                 Board Rule
@@ -74,7 +74,7 @@ const About = () => {
 
         <div
           id="release"
-          className="rounded-2xl border border-foreground/10 border-b-4 border-fngreen bg-background/90 p-8 space-y-6 shadow-sm scroll-mt-28"
+          className="rounded-2xl border border-b-4 border-fngreen bg-background/90 p-8 space-y-6 shadow-sm scroll-mt-28"
         >
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
@@ -99,7 +99,7 @@ const About = () => {
             ].map((unit) => (
               <div
                 key={unit.label}
-                className="rounded-xl border border-foreground/10 bg-gradient-to-b from-white to-gray-100 p-5 border-b-4 border-fnyellow text-center shadow-sm"
+                className="rounded-xl border bg-linear-to-b from-white to-gray-100 p-5 border-b-4 border-fnblue text-center shadow-sm"
               >
                 <p className="text-4xl md:text-5xl font-black tracking-tight text-fnblue">
                   {unit.value}
@@ -133,10 +133,10 @@ const About = () => {
 
         <div
           id="champion"
-          className="rounded-2xl border border-fnred/60 bg-gradient-to-br from-fnred to-fnredb border-b-4 border-fnredb text-white p-8 md:p-10 scroll-mt-28 shadow-lg relative overflow-hidden"
+          className="rounded-2xl border bg-linear-to-br from-fnred to-fnredb border-b-4 border-fnredb text-white p-8 md:p-10 scroll-mt-28 shadow-lg relative overflow-hidden"
         >
           <div
-            className="absolute inset-0 opacity-40 bg-blend-multiply pointer-events-none bg-repeat bg-center"
+            className="absolute inset-0 opacity-100 mix-blend-multiply pointer-events-none bg-repeat bg-center"
             style={{ backgroundImage: "url(/textures/noise-main.svg)" }}
           ></div>
           <div className="absolute -top-10 -right-12 size-36 rounded-full bg-white/10 blur-2xl" />
