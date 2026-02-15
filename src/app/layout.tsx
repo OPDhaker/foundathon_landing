@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Work_Sans } from "next/font/google";
 import Header from "@/components/sections/Header";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 // import { ThemeProvider } from "next-themes";
 
@@ -35,8 +36,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         > */}
-          <Header />
-          {children}
+        <Header />
+        {children}
+        <Toaster />
         {/* </ThemeProvider> */}
       </body>
     </html>

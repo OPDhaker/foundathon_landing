@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { type TeamRecord, teamRecordListSchema } from "@/lib/register-schema";
 
@@ -117,5 +117,7 @@ export const readTeams = async (): Promise<TeamRecord[]> => {
 
 export const writeTeams = async (teams: TeamRecord[]) => {
   await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(DATA_FILE, JSON.stringify(teams, null, 2), "utf8");
+  const tempFile = `${DATA_FILE}.tmp`;
+  await writeFile(tempFile, JSON.stringify(teams, null, 2), "utf8");
+  await rename(tempFile, DATA_FILE);
 };

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FnButton } from "@/components/ui/fn-button";
+import { toast } from "@/hooks/use-toast";
 import {
   type NonSrmMember,
   nonSrmMemberSchema,
@@ -18,6 +19,16 @@ type NonSrmMeta = {
   collegeName: string;
   isClub: boolean;
   clubName: string;
+};
+
+type TeamSummary = {
+  id: string;
+  teamName: string;
+  teamType: TeamType;
+  leadName: string;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const MIN_MEMBERS = 3;
@@ -60,9 +71,7 @@ const Register = () => {
     useState<NonSrmMember>(emptyNonSrmMember);
   const [nonSrmMeta, setNonSrmMeta] = useState<NonSrmMeta>(emptyNonSrmMeta);
 
-  const [teams, setTeams] = useState<TeamRecord[]>([]);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,10 +108,14 @@ const Register = () => {
     setIsLoading(true);
     try {
       const res = await fetch("/api/register", { method: "GET" });
-      const data = (await res.json()) as { teams?: TeamRecord[] };
+      const data = (await res.json()) as { teams?: TeamSummary[] };
       setTeams(data.teams ?? []);
     } catch {
-      setError("Failed to load local team records.");
+      toast({
+        title: "Status Update",
+        description: "Failed to load local team records.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -142,8 +155,12 @@ const Register = () => {
     if (teamType === "srm") {
       const parsed = srmMemberSchema.safeParse(memberDraftSrm);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "Invalid member details.");
-        setMessage("");
+        toast({
+          title: "Validation Error",
+          description:
+            parsed.error.issues[0]?.message ?? "Invalid member details.",
+          variant: "destructive",
+        });
         return;
       }
       setMembersSrm((prev) => [...prev, parsed.data]);
@@ -151,16 +168,23 @@ const Register = () => {
     } else {
       const parsed = nonSrmMemberSchema.safeParse(memberDraftNonSrm);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "Invalid member details.");
-        setMessage("");
+        toast({
+          title: "Validation Error",
+          description:
+            parsed.error.issues[0]?.message ?? "Invalid member details.",
+          variant: "destructive",
+        });
         return;
       }
       setMembersNonSrm((prev) => [...prev, parsed.data]);
       setMemberDraftNonSrm(emptyNonSrmMember());
     }
 
-    setError("");
-    setMessage("Member added to preview.");
+    toast({
+      title: "Status Update",
+      description: "Member added to preview.",
+      variant: "success",
+    });
   };
 
   const removeMember = (index: number) => {
@@ -183,8 +207,11 @@ const Register = () => {
       setMembersNonSrm([]);
       setNonSrmMeta(emptyNonSrmMeta());
     }
-    setError("");
-    setMessage("Current form cleared.");
+    toast({
+      title: "Status Update",
+      description: "Current form cleared.",
+      variant: "success",
+    });
   };
 
   const submitTeam = async () => {
@@ -208,10 +235,12 @@ const Register = () => {
 
     const parsed = teamSubmissionSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(
-        parsed.error.issues[0]?.message ?? "Please check entered details.",
-      );
-      setMessage("");
+      toast({
+        title: "Validation Error",
+        description:
+          parsed.error.issues[0]?.message ?? "Please check entered details.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -229,16 +258,22 @@ const Register = () => {
       };
 
       if (!res.ok || !data.team) {
-        setError(data.error ?? "Failed to save team.");
-        setMessage("");
+        toast({
+          title: "Validation Error",
+          description: data.error ?? "Failed to save team.",
+          variant: "destructive",
+        });
         return;
       }
 
       setTeams(data.teams ?? []);
       router.push(`/register/success/${data.team.id}`);
     } catch {
-      setError("Network error while saving team.");
-      setMessage("");
+      toast({
+        title: "Validation Error",
+        description: "Network error while saving team.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -247,14 +282,20 @@ const Register = () => {
   const deleteTeam = async (id: string) => {
     try {
       const res = await fetch(`/api/register?id=${id}`, { method: "DELETE" });
-      const data = (await res.json()) as { teams?: TeamRecord[] };
+      const data = (await res.json()) as { teams?: TeamSummary[] };
       if (!res.ok) throw new Error();
       setTeams(data.teams ?? []);
-      setError("");
-      setMessage("Saved team removed.");
+      toast({
+        title: "Status Update",
+        description: "Saved team removed.",
+        variant: "success",
+      });
     } catch {
-      setError("Failed to remove saved team.");
-      setMessage("");
+      toast({
+        title: "Validation Error",
+        description: "Failed to remove saved team.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -268,7 +309,7 @@ const Register = () => {
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="rounded-2xl border bg-background/95 p-6 md:p-8 shadow-lg border-b-4 border-fnblue backdrop-blur-sm">
             <div className="space-y-4">
-              <p className="inline-flex rounded-full border-2 border-fngreen bg-fngreen/20 px-3 text-sm font-bold uppercase tracking-[0.2em] text-fngreen">
+              <p className="inline-flex rounded-full border-2 border-fngreen bg-fngreen/20 px-3  text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-fngreen">
                 Foundathon 3.0 Registration
               </p>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight">
@@ -306,52 +347,25 @@ const Register = () => {
               </div>
             </div>
 
-            {(message || error) && (
-              <div
-                className={`mt-5 rounded-xl border px-4 py-3 ${
-                  error
-                    ? "border-fnred/40 bg-fnred/10 text-fnred"
-                    : "border-fngreen/40 bg-fngreen/10 text-fngreen"
-                }`}
-              >
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold">
-                  {error ? "Validation Error" : "Status Update"}
-                </p>
-                <p className="text-sm font-semibold mt-1">{error || message}</p>
-              </div>
-            )}
-
             <div className="mt-6 rounded-xl border border-foreground/10 bg-linear-to-b from-gray-100 to-gray-50 p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.22em] text-foreground/70 font-semibold mb-3">
+              <p className="ext-sm md:text-base font-bold uppercase tracking-[0.08em] mb-3 text-fnblue">
                 Team Type
               </p>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-foreground/70">
-                  Non-SRM
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={teamType === "srm"}
-                  onClick={() =>
-                    setTeamType((prev) => (prev === "srm" ? "non_srm" : "srm"))
+              <label className="block">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-foreground/70 font-semibold mb-2">
+                  Select Team Category
+                </p>
+                <select
+                  value={teamType}
+                  onChange={(event) =>
+                    setTeamType(event.target.value as TeamType)
                   }
-                  className={`relative inline-flex h-8 w-16 rounded-full border transition ${
-                    teamType === "srm"
-                      ? "bg-fnblue/80 border-fnblue"
-                      : "bg-foreground/20 border-foreground/30"
-                  }`}
+                  className="w-full rounded-lg border border-fnblue/35 bg-linear-to-r from-white to-fnblue/10 px-3 py-2 text-sm font-bold uppercase tracking-[0.08em] text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-fnblue/50"
                 >
-                  <span
-                    className={`inline-block size-6 rounded-full bg-white shadow-sm transition absolute top-0.5 ${
-                      teamType === "srm" ? "left-9" : "left-1"
-                    }`}
-                  />
-                </button>
-                <span className="text-sm font-semibold text-foreground">
-                  SRM
-                </span>
-              </div>
+                  <option value="srm">SRM</option>
+                  <option value="non_srm">Non-SRM</option>
+                </select>
+              </label>
             </div>
 
             <div className="mt-6 rounded-xl border border-foreground/10 bg-linear-to-b from-gray-100 to-gray-50 p-4 md:p-5 shadow-sm">
@@ -465,7 +479,7 @@ const Register = () => {
             </div>
           </section>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 self-start h-[calc(100vh-7rem)] overflow-y-auto pr-1">
+          <aside className="space-y-4 lg:sticky lg:top-10 self-start pr-1">
             <div className="rounded-2xl border bg-background/95 p-6 shadow-md border-b-4 border-fnyellow backdrop-blur-sm">
               <p className="text-xs uppercase tracking-[0.22em] text-foreground/70 font-semibold">
                 Team Status
@@ -612,7 +626,7 @@ const Register = () => {
                   >
                     <p className="text-sm font-bold">{team.teamName}</p>
                     <p className="text-xs text-foreground/70 mt-1">
-                      Lead: {team.lead.name} | {1 + team.members.length} members
+                      Lead: {team.leadName} | {team.memberCount} members
                     </p>
                     <FnButton
                       type="button"

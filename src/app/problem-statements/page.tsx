@@ -28,7 +28,7 @@ export default function ProblemStatementsPage() {
       <div className="absolute -bottom-28 -left-16 size-112 rounded-full bg-fnyellow/25 blur-3xl pointer-events-none" />
 
       <div className="fncontainer relative py-16 md:py-24">
-        <section className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 p-8 md:p-10 text-foreground shadow-2xl border-b-4 border-fnblue backdrop-blur-sm">
+        <section className="relative overflow-hidden rounded-2xl border bg-background/95 p-8 md:p-10 text-foreground shadow-2xl border-b-4 border-fnblue backdrop-blur-sm">
           <div
             className="absolute inset-0 opacity-10 pointer-events-none bg-repeat bg-center"
             style={{ backgroundImage: "url(/textures/noise-main.svg)" }}
@@ -37,7 +37,7 @@ export default function ProblemStatementsPage() {
           <div className="absolute -bottom-10 -left-8 size-28 rounded-full bg-fnyellow/30 blur-2xl pointer-events-none" />
 
           <div className="relative">
-            <p className="inline-flex rounded-full border border-fnblue/35 bg-fnblue/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-fnblue">
+            <p className="inline-flex rounded-full border border-fnblue/35 bg-fnblue/10 px-3 text-xs font-bold uppercase tracking-[0.2em] text-fnblue">
               Problem Statements
             </p>
             <h1 className="mt-4 text-5xl md:text-7xl font-black uppercase tracking-tight leading-none text-balance">
@@ -57,12 +57,12 @@ export default function ProblemStatementsPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-xl border border-foreground/10 bg-gradient-to-b from-white to-gray-100 p-5 text-center shadow-lg border-b-4 border-fnyellow"
+                  className="rounded-xl border bg-linear-to-b from-white to-gray-100 p-5 text-center shadow-lg border-b-4 border-fnblue"
                 >
                   <p className="text-6xl md:text-8xl font-black leading-none text-fnblue drop-shadow-[0_0_10px_rgba(59,130,246,0.18)]">
                     {item.value}
                   </p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-foreground/70">
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70">
                     {item.label}
                   </p>
                 </div>

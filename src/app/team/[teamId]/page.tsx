@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FnButton } from "@/components/ui/fn-button";
+import { toast } from "@/hooks/use-toast";
 import {
   type NonSrmMember,
   nonSrmMemberSchema,
@@ -66,8 +67,6 @@ export default function TeamDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
 
@@ -109,7 +108,11 @@ export default function TeamDashboardPage() {
         };
 
         if (!res.ok || !data.team) {
-          setError(data.error ?? "Team not found.");
+          toast({
+            title: "Validation Error",
+            description: data.error ?? "Team not found.",
+            variant: "destructive",
+          });
           return;
         }
 
@@ -134,7 +137,11 @@ export default function TeamDashboardPage() {
           });
         }
       } catch {
-        setError("Failed to load team data.");
+        toast({
+          title: "Validation Error",
+          description: "Failed to load team data.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -148,25 +155,40 @@ export default function TeamDashboardPage() {
     if (teamType === "srm") {
       const parsed = srmMemberSchema.safeParse(draftSrm);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "Invalid member data.");
+        toast({
+          title: "Validation Error",
+          description:
+            parsed.error.issues[0]?.message ?? "Invalid member data.",
+          variant: "destructive",
+        });
         return;
       }
       setMembersSrm((prev) => [...prev, parsed.data]);
       setDraftSrm(emptySrmMember());
-      setMessage("Member added.");
-      setError("");
+      toast({
+        title: "Status Update",
+        description: "Member added.",
+        variant: "success",
+      });
       return;
     }
 
     const parsed = nonSrmMemberSchema.safeParse(draftNonSrm);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid member data.");
+      toast({
+        title: "Validation Error",
+        description: parsed.error.issues[0]?.message ?? "Invalid member data.",
+        variant: "destructive",
+      });
       return;
     }
     setMembersNonSrm((prev) => [...prev, parsed.data]);
     setDraftNonSrm(emptyNonSrmMember());
-    setMessage("Member added.");
-    setError("");
+    toast({
+      title: "Status Update",
+      description: "Member added.",
+      variant: "success",
+    });
   };
 
   const removeMember = (index: number) => {
@@ -198,7 +220,12 @@ export default function TeamDashboardPage() {
     if (teamType === "srm") {
       const parsed = srmMemberSchema.safeParse(editingSrm);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "Invalid member data.");
+        toast({
+          title: "Validation Error",
+          description:
+            parsed.error.issues[0]?.message ?? "Invalid member data.",
+          variant: "destructive",
+        });
         return;
       }
       setMembersSrm((prev) =>
@@ -207,7 +234,12 @@ export default function TeamDashboardPage() {
     } else {
       const parsed = nonSrmMemberSchema.safeParse(editingNonSrm);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "Invalid member data.");
+        toast({
+          title: "Validation Error",
+          description:
+            parsed.error.issues[0]?.message ?? "Invalid member data.",
+          variant: "destructive",
+        });
         return;
       }
       setMembersNonSrm((prev) =>
@@ -215,8 +247,11 @@ export default function TeamDashboardPage() {
       );
     }
 
-    setMessage("Member updated.");
-    setError("");
+    toast({
+      title: "Status Update",
+      description: "Member updated.",
+      variant: "success",
+    });
     cancelEditMember();
   };
 
@@ -241,8 +276,11 @@ export default function TeamDashboardPage() {
 
     const parsed = teamSubmissionSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Validation failed.");
-      setMessage("");
+      toast({
+        title: "Validation Error",
+        description: parsed.error.issues[0]?.message ?? "Validation failed.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -256,29 +294,50 @@ export default function TeamDashboardPage() {
       const data = (await res.json()) as { team?: TeamRecord; error?: string };
 
       if (!res.ok || !data.team) {
-        setError(data.error ?? "Failed to save changes.");
-        setMessage("");
+        toast({
+          title: "Validation Error",
+          description: data.error ?? "Failed to save changes.",
+          variant: "destructive",
+        });
         return;
       }
 
       setUpdatedAt(data.team.updatedAt);
-      setMessage("Changes saved to JSON.");
-      setError("");
+      toast({
+        title: "Status Update",
+        description: "Changes saved to JSON.",
+        variant: "success",
+      });
     } catch {
-      setError("Network error while saving.");
-      setMessage("");
+      toast({
+        title: "Validation Error",
+        description: "Network error while saving.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteTeam = async () => {
-    const res = await fetch(`/api/register/${teamId}`, { method: "DELETE" });
-    if (res.ok) {
-      router.push("/register");
-      return;
+    try {
+      const res = await fetch(`/api/register/${teamId}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/register");
+        return;
+      }
+      toast({
+        title: "Validation Error",
+        description: "Failed to delete team.",
+        variant: "destructive",
+      });
+    } catch {
+      toast({
+        title: "Validation Error",
+        description: "Failed to delete team.",
+        variant: "destructive",
+      });
     }
-    setError("Failed to delete team.");
   };
 
   if (isLoading) {
@@ -299,8 +358,8 @@ export default function TeamDashboardPage() {
       />
       <div className="fncontainer relative py-10 md:py-14">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-2xl border border-foreground/10 bg-background/95 p-6 md:p-8 shadow-lg border-b-4 border-fnblue">
-            <p className="inline-flex rounded-full border-2 border-fnblue bg-fnblue/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-fnblue">
+          <section className="rounded-2xl border bg-background/95 p-6 md:p-8 shadow-lg border-b-4 border-fnblue">
+            <p className="inline-flex rounded-full border-2 border-fnblue bg-fnblue/10 px-3 text-sm font-bold uppercase tracking-[0.2em] text-fnblue">
               Team Dashboard
             </p>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mt-4">
@@ -468,13 +527,23 @@ export default function TeamDashboardPage() {
             </div>
           </section>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 self-start h-[calc(100vh-7rem)] overflow-y-auto pr-1">
-            <div className="rounded-2xl border border-foreground/10 bg-background/95 p-6 shadow-md border-b-4 border-fnyellow">
+          <aside className="space-y-4 self-start pr-1">
+            <div className="rounded-2xl border bg-background/95 p-6 shadow-md border-b-4 border-fnyellow">
               <p className="text-xs uppercase tracking-[0.2em] font-semibold text-foreground/70">
                 Team Snapshot
               </p>
               <p className="mt-3 text-sm font-semibold">Team: {teamName}</p>
-              <p className="text-sm font-semibold">Type: {teamType}</p>
+              <p className="text-sm font-semibold">
+                Type: {teamType === "srm" ? "SRM Team" : "Non-SRM Team"}
+              </p>
+              {teamType === "non_srm" && (
+                <p className="text-sm font-semibold">
+                  Club:{" "}
+                  {metaNonSrm.isClub
+                    ? metaNonSrm.clubName || "Club team"
+                    : "Independent Team"}
+                </p>
+              )}
               <p className="text-sm font-semibold">Members: {memberCount}/5</p>
               <p className="text-sm font-semibold">
                 Completed Profiles: {completedProfiles}/{memberCount}
@@ -487,22 +556,7 @@ export default function TeamDashboardPage() {
               </p>
             </div>
 
-            {(error || message) && (
-              <div
-                className={`rounded-2xl border p-4 ${
-                  error
-                    ? "border-fnred/40 bg-fnred/10 text-fnred"
-                    : "border-fngreen/40 bg-fngreen/10 text-fngreen"
-                }`}
-              >
-                <p className="text-xs uppercase tracking-[0.18em] font-semibold">
-                  {error ? "Error" : "Status"}
-                </p>
-                <p className="text-sm font-semibold mt-1">{error || message}</p>
-              </div>
-            )}
-
-            <div className="rounded-2xl border border-foreground/10 bg-background/95 p-6 shadow-md border-b-4 border-fnblue">
+            <div className="rounded-2xl border bg-background/95 p-6 shadow-md border-b-4 border-fnblue">
               <p className="text-xs uppercase tracking-[0.2em] font-semibold text-foreground/70">
                 Members Table
               </p>
@@ -577,7 +631,7 @@ export default function TeamDashboardPage() {
           aria-modal="true"
           aria-labelledby="delete-team-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-fnred/30 bg-background p-6 shadow-2xl border-b-4 border-fnred">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-2xl border-b-4 border-fnred">
             <p
               id="delete-team-title"
               className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"

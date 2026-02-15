@@ -2,9 +2,8 @@ import { z } from "zod";
 
 const contactNumberSchema = z
   .number()
-  .int("Contact must be a whole number.")
-  .min(1_000_000_000, "Valid contact is required.")
-  .max(9_999_999_999, "Contact must be 10 digits (without 0 and +91).");
+  .min(10, "Valid contact is required. Too Short.")
+  .max(10, "Contact must be 10 digits (without 0 and +91).");
 
 export const srmMemberSchema = z.object({
   name: z
@@ -16,18 +15,18 @@ export const srmMemberSchema = z.object({
     .string()
     .trim()
     .regex(/^RA\d{13}$/, {
-      message: "RA Number must start with RA followed by digits.",
+      message: "RA Number must start with 'RA' followed by 13 digits.",
     })
-    .max(15, "RA Number is too long,"),
+    .max(15),
   netId: z
     .string()
     .trim()
+    .min(6, "NetID must be 6 characters long.")
+    .max(6, "NetID must be 6 characters long.")
     .regex(/^[a-z]{2}[0-9]{4}$/, {
       message:
-        "NetID must be 2 lowercase letters followed by 4 digits (e.g., od7270)",
-    })
-    .min(6, "NetID must be 6 characters long.")
-    .max(6, "NetID must be 6 characters long."),
+        "NetID must be 2 lowercase letters followed by 4 digits.",
+    }),
   dept: z.string().trim().min(2, "Department is required."), // TODO: Maybe add a dropdown with common departments?
   contact: contactNumberSchema,
 });
@@ -43,15 +42,29 @@ export const nonSrmMemberSchema = z.object({
   contact: contactNumberSchema,
 });
 
-export const srmTeamSubmissionSchema = z.object({
-  teamType: z.literal("srm"),
-  teamName: z.string().trim().min(2, "Team Name is required."),
-  lead: srmMemberSchema,
-  members: z
-    .array(srmMemberSchema)
-    .min(2, "At least 2 members are required besides the lead.")
-    .max(4, "Maximum 4 members are allowed besides the lead."),
-});
+export const srmTeamSubmissionSchema = z
+  .object({
+    teamType: z.literal("srm"),
+    teamName: z.string().trim().min(2, "Team Name is required."),
+    lead: srmMemberSchema,
+    members: z
+      .array(srmMemberSchema)
+      .min(2, "At least 2 members are required besides the lead.")
+      .max(4, "Maximum 4 members are allowed besides the lead."),
+  })
+  .superRefine((data, ctx) => {
+    const ids = [
+      data.lead.netId,
+      ...data.members.map((member) => member.netId),
+    ];
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["members"],
+        message: "Each member must have a unique NetID.",
+      });
+    }
+  });
 
 export const nonSrmTeamSubmissionSchema = z
   .object({
@@ -72,6 +85,18 @@ export const nonSrmTeamSubmissionSchema = z
         code: z.ZodIssueCode.custom,
         path: ["clubName"],
         message: "Club Name is required when this team represents a club.",
+      });
+    }
+
+    const ids = [
+      data.lead.collegeId,
+      ...data.members.map((member) => member.collegeId),
+    ];
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["members"],
+        message: "Each member must have a unique College ID Number.",
       });
     }
   });
