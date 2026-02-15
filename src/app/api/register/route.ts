@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       team: { id: data.id },
-      teams: [toTeamSummary(data )],
+      teams: [toTeamSummary(data)],
     },
     { status: 201, headers: JSON_HEADERS },
   );
@@ -252,7 +252,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const teams = (data ?? []).map((row) =>
-    toTeamSummary(row ),
+    toTeamSummary(row),
   );
   return NextResponse.json({ teams }, { headers: JSON_HEADERS });
 }

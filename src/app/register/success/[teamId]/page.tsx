@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FnButton } from "@/components/ui/fn-button";
+import { toast } from "@/hooks/use-toast";
 import { getProblemReleaseCountdown } from "@/lib/problem-release-countdown";
+import type { TeamRecord } from "@/lib/register-schema";
 
 export default function RegistrationSuccessPage() {
   const params = useParams<{ teamId: string }>();
   const [time, setTime] = useState(() => getProblemReleaseCountdown());
+  const [team, setTeam] = useState<TeamRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const id = window.setInterval(
@@ -17,6 +21,43 @@ export default function RegistrationSuccessPage() {
     );
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/register/${params.teamId}`);
+        const data = (await res.json()) as {
+          team?: TeamRecord;
+          error?: string;
+        };
+
+        if (!res.ok || !data.team) {
+          toast({
+            title: "Error",
+            description: data.error ?? "Failed to load team data",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setTeam(data.team);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to load team data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTeam();
+  }, [params.teamId]);
 
   return (
     <main className="min-h-screen bg-gray-200 text-foreground relative overflow-hidden">
@@ -72,6 +113,37 @@ export default function RegistrationSuccessPage() {
                   </p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 rounded-xl border border-fnblue/25 bg-fnblue/10 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-fnblue">
+                Team Name
+              </p>
+              <p className="text-sm md:text-base font-bold mt-1">
+                {isLoading ? "Loading..." : team?.teamName ?? "N/A"}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-fnblue/25 bg-fnblue/10 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-fnblue">
+                Lead Name
+              </p>
+              <p className="text-sm md:text-base font-bold mt-1">
+                {isLoading ? "Loading..." : team?.lead.name ?? "N/A"}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-fnblue/25 bg-fnblue/10 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-fnblue">
+                Total Members
+              </p>
+              <p className="text-sm md:text-base font-bold mt-1">
+                {isLoading
+                  ? "Loading..."
+                  : team
+                    ? team.members.length + 1
+                    : "N/A"}
+              </p>
             </div>
 
             <div className="mt-6 rounded-xl border border-fnblue/25 bg-fnblue/10 p-4">

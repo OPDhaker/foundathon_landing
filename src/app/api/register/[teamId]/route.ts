@@ -6,7 +6,6 @@ import {
   JSON_HEADERS,
   type RegistrationRow,
   toTeamRecord,
-  transformToLegacyFormat,
   UUID_PATTERN,
 } from "@/lib/register-api";
 import { teamSubmissionSchema } from "@/lib/register-schema";
@@ -41,7 +40,7 @@ const findTeamById = async ({
 }) =>
   supabase
     .from("eventsregistrations")
-    .select("id, created_at, updated_at, details")
+    .select("id, created_at, details")
     .eq("id", teamId)
     .eq("event_id", EVENT_ID)
     .eq("application_id", userId)
@@ -91,7 +90,7 @@ export async function GET(_: NextRequest, { params }: Params) {
       { status: 404, headers: JSON_HEADERS },
     );
   }
-
+  console.log("Fetched team data:", data);
   const team = toTeamRecord(data as RegistrationRow);
   if (!team) {
     return NextResponse.json(
@@ -153,11 +152,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from("eventsregistrations")
-    .update({ details: transformToLegacyFormat(parsed.data) })
+    .update({ details: parsed.data })
     .eq("id", teamId)
     .eq("event_id", EVENT_ID)
     .eq("application_id", user.id)
-    .select("id, created_at, updated_at, details")
+    .select("id, created_at, details")
     .maybeSingle();
 
   if (error) {
