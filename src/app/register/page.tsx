@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FnButton } from "@/components/ui/fn-button";
 import { toast } from "@/hooks/use-toast";
-import { type NonSrmMember, nonSrmMemberSchema, type SrmMember, srmMemberSchema, type TeamRecord, teamSubmissionSchema } from "@/lib/register-schema";
-import { create } from "node:domain";
-import { Plus, PlusIcon, Trash2 } from "lucide-react";
+import { type NonSrmMember, nonSrmMemberSchema, type SrmMember, srmMemberSchema, teamSubmissionSchema } from "@/lib/register-schema";
 
 type TeamType = "srm" | "non_srm";
 
@@ -266,8 +264,8 @@ const Register = () => {
         id: team.id,
         teamName: team.teamName,
         teamType: team.teamType,
-        leadName: team.lead.name,
-        memberCount: team.members.length,
+        leadName: team.leadName,
+        memberCount: team.memberCount,
         createdAt: team.createdAt,
         updatedAt: team.updatedAt,
       }));
