@@ -16,7 +16,7 @@ const geistMono = Work_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Foundathon 3.0",
+  title: "Foundathon 3.0 - The Founders Club",
   description: "Foundathon 3.0 is a three-day innovation marathon featuring a dual-stage competitive structure. Participants tackle specific challenges curated by industry partners, with track winners earning direct recognition from the respective organization. These track champions then advance to a grand finale to compete for the ultimate cash prize.",
   openGraph: {
     type: "website",
@@ -38,9 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <link rel="shortcut icon" href="/logo.svg" type="image/x-icon" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* <ThemeProvider
           attribute="class"
           defaultTheme="light"
