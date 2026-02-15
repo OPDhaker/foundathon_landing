@@ -6,9 +6,7 @@ import { teamSubmissionSchema } from "@/lib/register-schema";
 const JSON_HEADERS = { "Cache-Control": "no-store" };
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const EVENT_ID =
-  process.env.NEXT_PUBLIC_FOUNDATHON_EVENT_ID ??
-  "583a3b40-da9d-412a-a266-cc7e64330b16";
+const EVENT_ID = '583a3b40-da9d-412a-a266-cc7e64330b16';
 
 type TeamSummary = {
   id: string;
@@ -38,61 +36,60 @@ const parseRequestJson = async (request: NextRequest): Promise<unknown> => {
   }
 };
 
-const getSupabaseEnv = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    throw new Error("Missing Supabase environment variables.");
-  }
-  return { url, anonKey };
-};
-
 async function createSupabaseClient() {
-  const { url, anonKey } = getSupabaseEnv();
   const cookieStore = await cookies();
 
-  return createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
-      },
-    },
-  });
+    }
+  );
 }
 
-function transformToLegacyFormat(data: unknown) {
+
+function transformToLegacyFormat(data: any) {
   const parsed = teamSubmissionSchema.parse(data);
   const allMembers = [parsed.lead, ...parsed.members];
+  const lead = allMembers[0];
+  const second = allMembers[1];
+  const third = allMembers[2];
+  const fourth = allMembers[3];
+  const fifth = allMembers[4];
 
   return {
     teamName: parsed.teamName,
-    teamType: parsed.teamType,
-    memberCount: allMembers.length,
-    fullName1: allMembers[0]?.name ?? null,
-    rollNumber1:
-      parsed.teamType === "srm" ? (allMembers[0]?.raNumber ?? null) : null,
-    dept1: parsed.teamType === "srm" ? (allMembers[0]?.dept ?? null) : null,
-    fullName2: allMembers[1]?.name ?? null,
-    rollNumber2:
-      parsed.teamType === "srm" ? (allMembers[1]?.raNumber ?? null) : null,
-    dept2: parsed.teamType === "srm" ? (allMembers[1]?.dept ?? null) : null,
-    fullName3: allMembers[2]?.name ?? null,
-    rollNumber3:
-      parsed.teamType === "srm" ? (allMembers[2]?.raNumber ?? null) : null,
-    dept3: parsed.teamType === "srm" ? (allMembers[2]?.dept ?? null) : null,
-    fullName4: allMembers[3]?.name ?? null,
-    rollNumber4:
-      parsed.teamType === "srm" ? (allMembers[3]?.raNumber ?? null) : null,
-    dept4: parsed.teamType === "srm" ? (allMembers[3]?.dept ?? null) : null,
-    fullName5: allMembers[4]?.name ?? null,
-    rollNumber5:
-      parsed.teamType === "srm" ? (allMembers[4]?.raNumber ?? null) : null,
-    dept5: parsed.teamType === "srm" ? (allMembers[4]?.dept ?? null) : null,
+
+    fullName1: lead?.name ?? null,
+    rollNumber1: 'raNumber' in lead ? (lead?.raNumber ?? null) : (lead?.collegeId ?? null),
+    dept1: 'dept' in lead ? (lead?.dept ?? null) : null,
+
+    fullName2: second?.name ?? null,
+    rollNumber2: 'raNumber' in second ? (second?.raNumber ?? null) : (second?.collegeId ?? null),
+    dept2: 'dept' in second ? (second?.dept ?? null) : null,
+
+    fullName3: third?.name ?? null,
+    rollNumber3: 'raNumber' in third ? (third?.raNumber ?? null) : (third?.collegeId ?? null),
+    dept3: 'dept' in third ? (third?.dept ?? null) : null,
+
+    fullName4: fourth?.name ?? null,
+    rollNumber4: 'raNumber' in fourth ? (fourth?.raNumber ?? null) : (fourth?.collegeId ?? null),
+    dept4: 'dept' in fourth ? (fourth?.dept ?? null) : null,
+
+    fullName5: fifth?.name ?? null,
+    rollNumber5: 'raNumber' in fifth ? (fifth?.raNumber ?? null) : (fifth?.collegeId ?? null),
+    dept5: 'dept' in fifth ? (fifth?.dept ?? null) : null,
+    
     whatsAppNumber: parsed.lead.contact ?? null,
     paymentAgreement: true,
   };
@@ -200,7 +197,7 @@ export async function POST(request: NextRequest) {
       { status: 401, headers: JSON_HEADERS },
     );
   }
-
+  //Check if registration already exists
   const { data: existing } = await supabase
     .from("eventsregistrations")
     .select("id")
