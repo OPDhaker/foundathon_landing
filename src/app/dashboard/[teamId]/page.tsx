@@ -845,8 +845,8 @@ export default function TeamDashboardPage() {
                 tone="green"
               />
               <HighlightTile
-                label="Team Type"
-                value={teamTypeLabel}
+                label="Created On"
+                value={formatDateTime(createdAt)}
                 tone="orange"
               />
             </div>
@@ -1132,27 +1132,32 @@ export default function TeamDashboardPage() {
           <aside className="space-y-4 self-start">
             <div className="rounded-2xl border border-b-4 border-fngreen bg-background/95 p-6 shadow-lg">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fngreen">
-                Team Snapshot
+                Team Identity
               </p>
               <p className="mt-3 text-sm font-semibold">Team: {teamName}</p>
-              <p className="text-sm font-semibold">Type: {teamTypeLabel}</p>
-              {teamType === "non_srm" && (
-                <p className="text-sm font-semibold">
-                  Club:{" "}
-                  {metaNonSrm.isClub
-                    ? metaNonSrm.clubName || "Club team"
-                    : "Independent Team"}
-                </p>
-              )}
-              <p className="text-sm font-semibold">Members: {memberCount}/5</p>
+              <p className="text-sm font-semibold">Team ID: {teamId}</p>
               <p className="text-sm font-semibold">
-                Completed Profiles: {completedProfiles}/{memberCount}
+                Lead:{" "}
+                {(teamType === "srm" ? leadSrm.name : leadNonSrm.name) || "N/A"}
               </p>
+              <p className="text-sm font-semibold">
+                Lead ID: {currentLeadId || "N/A"}
+              </p>
+              {teamType === "non_srm" && (
+                <>
+                  <p className="text-sm font-semibold">
+                    College: {metaNonSrm.collegeName || "N/A"}
+                  </p>
+                  <p className="text-sm font-semibold">
+                    Club:{" "}
+                    {metaNonSrm.isClub
+                      ? metaNonSrm.clubName || "Club team"
+                      : "Independent Team"}
+                  </p>
+                </>
+              )}
               <p className="mt-3 text-xs text-foreground/70">
                 Created: {formatDateTime(createdAt)}
-              </p>
-              <p className="text-xs text-foreground/70">
-                Updated: {formatDateTime(updatedAt)}
               </p>
             </div>
 
