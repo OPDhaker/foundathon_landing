@@ -6,6 +6,11 @@ import {
 } from "@/data/problem-statements";
 import { verifyProblemLockToken } from "@/lib/problem-lock-token";
 import {
+  countProblemStatementRegistrations,
+  getProblemStatementIdFromDetails,
+  type ProblemStatementCountRow,
+} from "@/lib/problem-statement-availability";
+import {
   createSupabaseClient,
   EVENT_ID,
   getSupabaseCredentials,
@@ -50,19 +55,6 @@ const PROBLEM_STATEMENT_DETAIL_KEYS = [
   "problemStatementCap",
   "problemStatementLockedAt",
 ] as const;
-
-type ProblemStatementCountRow = {
-  details: Record<string, unknown> | null;
-};
-
-const getProblemStatementId = (details: Record<string, unknown> | null) => {
-  if (!details) {
-    return null;
-  }
-
-  const value = details.problemStatementId;
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-};
 
 const findTeamById = async ({
   supabase,
@@ -228,7 +220,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     existingTeam.details && typeof existingTeam.details === "object"
       ? (existingTeam.details as Record<string, unknown>)
       : {};
-  const existingStatementId = getProblemStatementId(existingDetails);
+  const existingStatementId = getProblemStatementIdFromDetails(existingDetails);
   const updatedDetails: Record<string, unknown> = withSrmEmailNetIds(
     parsed.data,
   );
@@ -295,14 +287,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    const registeredCount = (
-      (statementRows ?? []) as ProblemStatementCountRow[]
-    ).reduce(
-      (count, row) =>
-        getProblemStatementId(row.details) === problemStatement.id
-          ? count + 1
-          : count,
-      0,
+    const registeredCount = countProblemStatementRegistrations(
+      (statementRows ?? []) as ProblemStatementCountRow[],
+      problemStatement.id,
     );
 
     if (registeredCount >= PROBLEM_STATEMENT_CAP) {

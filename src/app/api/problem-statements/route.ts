@@ -4,30 +4,21 @@ import {
   PROBLEM_STATEMENTS,
 } from "@/data/problem-statements";
 import {
+  buildProblemStatementCounts,
+  type ProblemStatementCountRow,
+} from "@/lib/problem-statement-availability";
+import {
   createSupabaseClient,
   EVENT_ID,
   getSupabaseCredentials,
   JSON_HEADERS,
 } from "@/lib/register-api";
 
-type ProblemStatementCountRow = {
-  details: Record<string, unknown> | null;
-};
-
 const missingSupabaseConfigResponse = () =>
   NextResponse.json(
     { error: "Supabase environment variables are not configured." },
     { headers: JSON_HEADERS, status: 500 },
   );
-
-const getProblemStatementId = (details: Record<string, unknown> | null) => {
-  if (!details) {
-    return null;
-  }
-
-  const value = details.problemStatementId;
-  return typeof value === "string" && value.length > 0 ? value : null;
-};
 
 export async function GET() {
   const credentials = getSupabaseCredentials();
@@ -60,15 +51,9 @@ export async function GET() {
     );
   }
 
-  const counts = new Map<string, number>();
-  for (const row of (data ?? []) as ProblemStatementCountRow[]) {
-    const statementId = getProblemStatementId(row.details);
-    if (!statementId) {
-      continue;
-    }
-
-    counts.set(statementId, (counts.get(statementId) ?? 0) + 1);
-  }
+  const counts = buildProblemStatementCounts(
+    (data ?? []) as ProblemStatementCountRow[],
+  );
 
   return NextResponse.json(
     {

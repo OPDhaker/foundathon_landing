@@ -6,15 +6,15 @@ import {
 } from "@/data/problem-statements";
 import { createProblemLockToken } from "@/lib/problem-lock-token";
 import {
+  countProblemStatementRegistrations,
+  type ProblemStatementCountRow,
+} from "@/lib/problem-statement-availability";
+import {
   createSupabaseClient,
   EVENT_ID,
   getSupabaseCredentials,
   JSON_HEADERS,
 } from "@/lib/register-api";
-
-type ProblemStatementCountRow = {
-  details: Record<string, unknown> | null;
-};
 
 const lockRequestSchema = z.object({
   problemStatementId: z
@@ -39,15 +39,6 @@ const missingSupabaseConfigResponse = () =>
     { error: "Supabase environment variables are not configured." },
     { headers: JSON_HEADERS, status: 500 },
   );
-
-const getProblemStatementId = (details: Record<string, unknown> | null) => {
-  if (!details) {
-    return null;
-  }
-
-  const value = details.problemStatementId;
-  return typeof value === "string" && value.length > 0 ? value : null;
-};
 
 export async function POST(request: NextRequest) {
   if (!isJsonRequest(request)) {
@@ -91,7 +82,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const problemStatement = getProblemStatementById(parsed.data.problemStatementId);
+  const problemStatement = getProblemStatementById(
+    parsed.data.problemStatementId,
+  );
 
   if (!problemStatement) {
     return NextResponse.json(
@@ -112,12 +105,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const registeredCount = ((data ?? []) as ProblemStatementCountRow[]).reduce(
-    (total, row) => {
-      const statementId = getProblemStatementId(row.details);
-      return statementId === problemStatement.id ? total + 1 : total;
-    },
-    0,
+  const registeredCount = countProblemStatementRegistrations(
+    (data ?? []) as ProblemStatementCountRow[],
+    problemStatement.id,
   );
 
   if (registeredCount >= PROBLEM_STATEMENT_CAP) {
