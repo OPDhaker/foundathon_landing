@@ -23,6 +23,9 @@ describe("/api/stats/registrations GET", () => {
     mocks.getFoundathonStatsApiKey.mockReturnValue("stats-secret");
     mocks.getRegistrationStats.mockResolvedValue({
       data: {
+        additionalStats: {
+          registrationTrendTimezone: "Asia/Kolkata",
+        },
         generatedAt: "2026-02-28T00:00:00.000Z",
       },
       ok: true,
@@ -119,5 +122,39 @@ describe("/api/stats/registrations GET", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body.generatedAt).toBe("2026-02-28T00:00:00.000Z");
+    expect(body.additionalStats.registrationTrendTimezone).toBe("Asia/Kolkata");
+    expect(mocks.getRegistrationStats).toHaveBeenCalledWith({
+      approval: "all",
+      from: null,
+      limit: 20,
+      statement: "all",
+      teamType: "all",
+      to: null,
+      view: "overview",
+    });
+  });
+
+  it("passes normalized filters to stats service", async () => {
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/stats/registrations?view=bad-view&teamType=srm&approval=accepted&limit=400&from=2026-03-02&to=2026-03-01",
+        {
+          headers: { "x-foundathon-stats-key": "stats-secret" },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getRegistrationStats).toHaveBeenCalledWith({
+      approval: "accepted",
+      from: "2026-03-01",
+      limit: 100,
+      statement: "all",
+      teamType: "srm",
+      to: "2026-03-02",
+      view: "overview",
+    });
   });
 });

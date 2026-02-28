@@ -23,6 +23,25 @@ vi.mock("@/server/registration-stats/service", () => ({
   getRegistrationStats: mocks.getRegistrationStats,
 }));
 
+vi.mock("./stats-dashboard-client", () => ({
+  default: ({
+    generatedAtLabel,
+    stats,
+    statsKey,
+  }: {
+    generatedAtLabel: string;
+    stats: RegistrationStatsResponse;
+    statsKey: string;
+  }) => (
+    <div data-testid="stats-dashboard-client">
+      <p>Unified Registration Analytics</p>
+      <p>Active View: {stats.meta.activeView}</p>
+      <p>Stats Key: {statsKey}</p>
+      <p>Generated (UTC): {generatedAtLabel}</p>
+    </div>
+  ),
+}));
+
 const buildStatsPayload = (): RegistrationStatsResponse => ({
   additionalStats: {
     anomalies: {
@@ -49,6 +68,7 @@ const buildStatsPayload = (): RegistrationStatsResponse => ({
       submissionRatePercent: 100,
       submittedTeams: 1,
     },
+    registrationTrendTimezone: "Asia/Kolkata",
     registrationTrendByDate: [{ date: "2026-02-28", registrations: 1 }],
     teamTypeBreakdown: [
       { percent: 100, teamType: "srm", teams: 1 },
@@ -69,6 +89,27 @@ const buildStatsPayload = (): RegistrationStatsResponse => ({
     includedRows: 1,
   },
   generatedAt: "2026-02-28T12:00:00.000Z",
+  meta: {
+    activeView: "overview",
+    appliedFilters: {
+      approval: "all",
+      from: null,
+      limit: 20,
+      statement: "all",
+      teamType: "all",
+      to: null,
+    },
+    generatedAt: "2026-02-28T12:00:00.000Z",
+    registrationTrendTimezone: "Asia/Kolkata",
+    statementOptions: [
+      {
+        id: "ps-01",
+        title: "Localized Government Scheme Discovery Portal",
+      },
+    ],
+    totalRowsAfterFilters: 1,
+    totalRowsBeforeFilters: 1,
+  },
   requiredStats: {
     rateOfFilling: {
       capacityTeams: 150,
@@ -88,6 +129,96 @@ const buildStatsPayload = (): RegistrationStatsResponse => ({
       },
     ],
     totalTeamsRegistered: 1,
+  },
+  views: {
+    approvals: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    exports: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    institutions: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    overview: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    quality: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    registrations: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    statements: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
+    submissions: {
+      cards: [{ id: "a", label: "A", unit: "teams", value: 1 }],
+      charts: [],
+      table: {
+        columns: ["name"],
+        limit: 20,
+        rows: [{ name: "row" }],
+        sort: "name asc",
+        total: 1,
+      },
+    },
   },
   visualData: {
     cards: [
@@ -211,13 +342,11 @@ describe("/stats page", () => {
 
     render(page);
 
-    expect(screen.getByText(/registration analytics/i)).toBeInTheDocument();
     expect(
-      screen.getAllByText(/Total Teams Registered/i).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/Registrations Per Problem Statement/i),
+      screen.getByText(/unified registration analytics/i),
     ).toBeInTheDocument();
+    expect(screen.getByText(/active view: overview/i)).toBeInTheDocument();
+    expect(screen.getByTestId("stats-dashboard-client")).toBeInTheDocument();
   });
 
   it("accepts trimmed stats page key from env", async () => {
@@ -229,8 +358,35 @@ describe("/stats page", () => {
 
     render(page);
 
-    expect(screen.getByText(/registration analytics/i)).toBeInTheDocument();
-    expect(mocks.getRegistrationStats).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByText(/unified registration analytics/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/stats key: page-secret/i)).toBeInTheDocument();
+    expect(mocks.getRegistrationStats).toHaveBeenCalledWith({
+      approval: "all",
+      from: null,
+      limit: 20,
+      statement: "all",
+      teamType: "all",
+      to: null,
+      view: "overview",
+    });
+  });
+
+  it("normalizes invalid view to overview before fetching stats", async () => {
+    await StatsPage({
+      searchParams: Promise.resolve({ key: "page-secret", view: "bad-view" }),
+    });
+
+    expect(mocks.getRegistrationStats).toHaveBeenCalledWith({
+      approval: "all",
+      from: null,
+      limit: 20,
+      statement: "all",
+      teamType: "all",
+      to: null,
+      view: "overview",
+    });
   });
 
   it("renders detailed guidance when service-role env is missing", async () => {

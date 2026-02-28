@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { parseStatsQueryInputFromUrl } from "@/app/stats/stats-filters";
 import { getFoundathonStatsApiKey } from "@/server/env";
 import { jsonError, jsonNoStore } from "@/server/http/response";
 import { getRegistrationStats } from "@/server/registration-stats/service";
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest) {
     return jsonError("Unauthorized", 401);
   }
 
-  const result = await getRegistrationStats();
+  const query = parseStatsQueryInputFromUrl(request.nextUrl.searchParams);
+  const result = await getRegistrationStats(query);
   if (!result.ok) {
     return jsonError(result.error, result.status);
   }

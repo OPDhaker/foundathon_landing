@@ -1,58 +1,80 @@
 # Registration Stats API
 
-## Purpose and scope
+## Purpose
 
-`GET /api/stats/registrations` provides aggregate registration analytics for Foundathon.
+The stats stack is now a unified suite:
 
-- No UI page is included.
-- Response is structured for direct chart rendering and dashboard cards.
-- Stats are scoped to current app event constants (`EVENT_ID`, `EVENT_TITLE`).
+- Private page: `/stats?key=<FOUNDATHON_STATS_PAGE_KEY>`
+- API: `GET /api/stats/registrations`
+- CSV export API: `GET /api/stats/registrations/export`
+
+The page is query-routed (`/stats?view=...`) and backed by one data source (`eventsregistrations` + `details`).
 
 ## Security
 
-This endpoint is protected by API key header authentication.
+### Stats API (`/api/stats/registrations`)
 
-- Header: `x-foundathon-stats-key: <FOUNDATHON_STATS_API_KEY>`
+- Required header: `x-foundathon-stats-key: <FOUNDATHON_STATS_API_KEY>`
 - Missing/invalid key: `401`
 - Missing server key config: `500`
 
-## Private stats page
+### Export API (`/api/stats/registrations/export`)
 
-Server-rendered page route:
+- Supports API header auth (`x-foundathon-stats-key`) for programmatic use.
+- Also accepts page key query auth (`?key=<FOUNDATHON_STATS_PAGE_KEY>`) for private `/stats` UI download actions.
+- Missing/invalid auth: `401`
+- Missing key configuration: `500`
 
-- `/stats?key=<FOUNDATHON_STATS_PAGE_KEY>`
+### Private page (`/stats`)
 
-Behavior:
+- Requires query key: `?key=<FOUNDATHON_STATS_PAGE_KEY>`
+- Missing/invalid key returns `404`.
 
-- Missing/invalid key returns `404` (page remains hidden).
-- Page reads stats on the server (no API key exposed to browser JavaScript).
-
-## Environment setup
-
-Add these variables:
+## Environment Variables
 
 ```env
 FOUNDATHON_STATS_API_KEY=<strong-secret>
-FOUNDATHON_STATS_EXCLUDED_EMAILS=<comma-separated-emails>
 FOUNDATHON_STATS_PAGE_KEY=<private-page-key>
+FOUNDATHON_STATS_EXCLUDED_EMAILS=<comma-separated-emails>
 ```
 
 Exclusion behavior:
 
-- `opdhaker2007@gmail.com` is always excluded by default.
-- `FOUNDATHON_STATS_EXCLUDED_EMAILS` is merged with the default list.
-- Email matching uses normalized `trim().toLowerCase()`.
+- `opdhaker2007@gmail.com` is always excluded.
+- `FOUNDATHON_STATS_EXCLUDED_EMAILS` is merged with default exclusion.
+- Matching is normalized with `trim().toLowerCase()`.
 
-## Request
+## Query Contract (`/stats` and `/api/stats/registrations`)
 
-```http
-GET /api/stats/registrations
-x-foundathon-stats-key: <secret>
-```
+All filters are optional; defaults are applied if missing/invalid.
 
-No body. No query params in v1.
+- `view`: `overview | registrations | statements | submissions | approvals | institutions | quality | exports`
+- `from`: `YYYY-MM-DD`
+- `to`: `YYYY-MM-DD`
+- `teamType`: `all | srm | non_srm | unknown`
+- `approval`: `all | accepted | rejected | submitted | invalid | not_reviewed`
+- `statement`: `all | <problemStatementId>`
+- `limit`: positive integer, default `20`, max `100`
 
-## Response schema
+Behavior:
+
+- Invalid or missing `view` falls back to `overview`.
+- Invalid filters are sanitized to defaults.
+- If `from > to`, range is normalized (swapped).
+- Day bucketing is IST (`Asia/Kolkata`) for date trends and date filters.
+
+## Views
+
+- `overview`: executive KPIs, fill trend, submission trend, top statements
+- `registrations`: daily registrations + cumulative trend, team-type distribution
+- `statements`: registrations vs capacity, fill-rate by statement
+- `submissions`: submitted vs pending and submission trend
+- `approvals`: approval distribution and queue age bands
+- `institutions`: SRM vs external and institution/club distribution
+- `quality`: anomaly composition and issue distribution
+- `exports`: available export datasets and row counts
+
+## Response Shape (`GET /api/stats/registrations`)
 
 ```ts
 type RegistrationStatsResponse = {
@@ -69,194 +91,92 @@ type RegistrationStatsResponse = {
     excludedRows: number;
     includedRows: number;
   };
-
-  requiredStats: {
-    totalTeamsRegistered: number;
-    rateOfFilling: {
-      overallPercent: number;
-      filledTeams: number;
-      capacityTeams: number;
-      remainingTeams: number;
+  meta: {
+    activeView:
+      | "overview"
+      | "registrations"
+      | "statements"
+      | "submissions"
+      | "approvals"
+      | "institutions"
+      | "quality"
+      | "exports";
+    appliedFilters: {
+      from: string | null;
+      to: string | null;
+      teamType: "all" | "srm" | "non_srm" | "unknown";
+      approval:
+        | "all"
+        | "accepted"
+        | "rejected"
+        | "submitted"
+        | "invalid"
+        | "not_reviewed";
+      statement: string;
+      limit: number;
     };
-    registrationsPerProblemStatement: Array<{
-      problemStatementId: string;
-      title: string;
-      registeredTeams: number;
-      cap: number;
-      remainingTeams: number;
-      fillRatePercent: number;
-      isFull: boolean;
-    }>;
+    totalRowsBeforeFilters: number;
+    totalRowsAfterFilters: number;
+    generatedAt: string;
+    registrationTrendTimezone: "Asia/Kolkata";
+    statementOptions: Array<{ id: string; title: string }>;
   };
+  views: Record<
+    "overview" | "registrations" | "statements" | "submissions" | "approvals" | "institutions" | "quality" | "exports",
+    {
+      cards: Array<{ id: string; label: string; unit: string; value: number | string }>;
+      charts: Array<{
+        id: string;
+        label: string;
+        chartType: "bar" | "line" | "composed" | "donut";
+        labels: string[];
+        series: Array<{ key: string; label: string; data: number[] }>;
+      }>;
+      table: {
+        columns: string[];
+        rows: Array<Record<string, number | string | null>>;
+        total: number;
+        limit: number;
+        sort: string;
+      };
+    }
+  >;
 
+  // Compatibility fields retained during transition:
+  requiredStats: unknown;
   additionalStats: {
-    teamTypeBreakdown: Array<{
-      teamType: "srm" | "non_srm" | "unknown";
-      teams: number;
-      percent: number;
-    }>;
-    approvalStatusBreakdown: Array<{
-      status: "accepted" | "rejected" | "submitted" | "invalid" | "not_reviewed";
-      teams: number;
-      percent: number;
-    }>;
-    presentationSubmission: {
-      submittedTeams: number;
-      pendingTeams: number;
-      submissionRatePercent: number;
-    };
-    participation: {
-      totalParticipants: number;
-      averageTeamSize: number;
-    };
-    registrationTrendByDate: Array<{
-      date: string;
-      registrations: number;
-    }>;
-    anomalies: {
-      missingProblemStatementId: number;
-      unknownProblemStatementId: number;
-      missingOrInvalidTeamType: number;
-      missingOrInvalidTeamMembers: number;
-    };
-    firstRegistrationAt: string | null;
-    lastRegistrationAt: string | null;
+    registrationTrendTimezone: "Asia/Kolkata";
+    registrationTrendByDate: Array<{ date: string; registrations: number }>;
+    // ...existing legacy shape retained
   };
-
-  visualData: {
-    cards: Array<{
-      id:
-        | "totalTeamsRegistered"
-        | "overallFillRate"
-        | "totalParticipants"
-        | "avgTeamSize"
-        | "pptSubmissionRate";
-      label: string;
-      value: number;
-      unit: "teams" | "percent" | "participants" | "members_per_team";
-    }>;
-    charts: {
-      registrationsPerProblemStatement: {
-        chartType: "bar";
-        labels: string[];
-        series: Array<{ name: "Registrations" | "Capacity"; data: number[] }>;
-      };
-      fillRatePerProblemStatement: {
-        chartType: "bar";
-        labels: string[];
-        series: Array<{ name: "Fill Rate %"; data: number[] }>;
-      };
-      registrationTrendByDate: {
-        chartType: "line";
-        labels: string[];
-        series: Array<{ name: "Registrations"; data: number[] }>;
-      };
-      teamTypeDistribution: {
-        chartType: "donut";
-        labels: string[];
-        series: Array<{ name: "Teams"; data: number[] }>;
-      };
-      approvalStatusDistribution: {
-        chartType: "donut";
-        labels: string[];
-        series: Array<{ name: "Teams"; data: number[] }>;
-      };
-    };
-  };
+  visualData: unknown;
 };
 ```
 
-## Example success response (`200`)
+Compatibility note:
 
-```json
-{
-  "generatedAt": "2026-02-28T21:00:00.000Z",
-  "event": {
-    "eventId": "325b1472-4ce9-412f-8a5e-e4b7153064fa",
-    "eventTitle": "Foundathon 3.0",
-    "statementCap": 15,
-    "totalStatements": 10,
-    "totalCapacity": 150
-  },
-  "filters": {
-    "excludedRegistrationEmails": ["opdhaker2007@gmail.com", "qa@example.com"],
-    "excludedRows": 1,
-    "includedRows": 34
-  },
-  "requiredStats": {
-    "totalTeamsRegistered": 34,
-    "rateOfFilling": {
-      "overallPercent": 22.67,
-      "filledTeams": 34,
-      "capacityTeams": 150,
-      "remainingTeams": 116
-    },
-    "registrationsPerProblemStatement": []
-  },
-  "additionalStats": {
-    "teamTypeBreakdown": [],
-    "approvalStatusBreakdown": [],
-    "presentationSubmission": {
-      "submittedTeams": 19,
-      "pendingTeams": 15,
-      "submissionRatePercent": 55.88
-    },
-    "participation": {
-      "totalParticipants": 128,
-      "averageTeamSize": 3.76
-    },
-    "registrationTrendByDate": [],
-    "anomalies": {
-      "missingProblemStatementId": 0,
-      "unknownProblemStatementId": 0,
-      "missingOrInvalidTeamType": 0,
-      "missingOrInvalidTeamMembers": 0
-    },
-    "firstRegistrationAt": "2026-02-20T10:00:00.000Z",
-    "lastRegistrationAt": "2026-02-27T17:30:00.000Z"
-  },
-  "visualData": {
-    "cards": [],
-    "charts": {
-      "registrationsPerProblemStatement": {
-        "chartType": "bar",
-        "labels": [],
-        "series": []
-      },
-      "fillRatePerProblemStatement": {
-        "chartType": "bar",
-        "labels": [],
-        "series": []
-      },
-      "registrationTrendByDate": {
-        "chartType": "line",
-        "labels": [],
-        "series": []
-      },
-      "teamTypeDistribution": {
-        "chartType": "donut",
-        "labels": [],
-        "series": []
-      },
-      "approvalStatusDistribution": {
-        "chartType": "donut",
-        "labels": [],
-        "series": []
-      }
-    }
-  }
-}
-```
+- `requiredStats`, `additionalStats`, and `visualData` are still returned for backward compatibility.
+- New consumers should use `meta` + `views`.
 
-## Metric definitions
+## Export API (`GET /api/stats/registrations/export`)
 
-- `registrationsPerProblemStatement`: team count per known statement id, with cap and remaining capacity.
-- `rateOfFilling.overallPercent`: `(filledTeams / capacityTeams) * 100`, rounded to 2 decimals.
-- `filledTeams`: sum of registrations assigned to known problem statements.
-- `totalTeamsRegistered`: all included rows after exclusion filter.
-- `teamTypeBreakdown`: distribution across `srm`, `non_srm`, and `unknown`.
-- `approvalStatusBreakdown`: normalized `is_approved` status distribution; unknown/empty values map to `not_reviewed`.
-- `presentationSubmission`: submission inferred from stored presentation metadata.
-- `participation.totalParticipants`: lead + valid members count aggregated across teams.
-- `registrationTrendByDate`: UTC date bucket from `created_at`.
-- `anomalies`: counters for malformed or missing registration details.
+### Query params
+
+- `dataset` (required):
+  - `overview | registrations | statements | submissions | approvals | institutions | quality | exports`
+- `key` (optional private-page auth path)
+- Also accepts same filters as `/api/stats/registrations`:
+  - `view` (ignored for dataset selection)
+  - `from`, `to`, `teamType`, `approval`, `statement`, `limit`
+
+### Response
+
+- `200 text/csv`
+- `Content-Disposition: attachment; filename="foundathon-stats-<dataset>-<YYYY-MM-DD>.csv"`
+- Deterministic column order from selected view table schema
+
+## IST Trend Semantics
+
+- `additionalStats.registrationTrendByDate[].date` uses IST day buckets.
+- `visualData.charts.registrationTrendByDate.labels` uses IST day labels.
+- `additionalStats.registrationTrendTimezone` and `meta.registrationTrendTimezone` are both `Asia/Kolkata`.

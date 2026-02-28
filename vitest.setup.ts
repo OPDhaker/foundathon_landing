@@ -20,3 +20,15 @@ if (typeof globalThis.IntersectionObserver === "undefined") {
   globalThis.IntersectionObserver =
     MockIntersectionObserver as typeof IntersectionObserver;
 }
+
+class MockResizeObserver implements ResizeObserver {
+  disconnect() {}
+
+  observe(_target: Element) {}
+
+  unobserve(_target: Element) {}
+}
+
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = MockResizeObserver as typeof ResizeObserver;
+}
