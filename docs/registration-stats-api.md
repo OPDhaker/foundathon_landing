@@ -8,6 +8,8 @@ The stats stack is now a unified suite:
 - API: `GET /api/stats/registrations`
 - CSV export API: `GET /api/stats/registrations/export`
 
+For the operations-first v2 suite (`/stats-v2`, `/api/stats/registrations/v2`, v2 exports), see [registration-stats-v2-api.md](./registration-stats-v2-api.md).
+
 The page is query-routed (`/stats?view=...`) and backed by one data source (`eventsregistrations` + `details`).
 
 ## Security

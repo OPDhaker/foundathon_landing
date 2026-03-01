@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RegistrationStatsResponse } from "@/server/registration-stats/service";
 import StatsDashboardClient from "./stats-dashboard-client";
@@ -264,6 +265,12 @@ describe("stats dashboard client", () => {
     expect(
       screen.getByText(/Unified Registration Analytics/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /private stats suite/i }),
+    ).toHaveAttribute("href", expect.stringContaining("/stats?"));
+    expect(
+      screen.getByRole("link", { name: /ops command centre/i }),
+    ).toHaveAttribute("href", expect.stringContaining("/stats-v2?"));
     expect(screen.getByRole("link", { name: /overview/i })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /apply filters/i }),
@@ -291,6 +298,33 @@ describe("stats dashboard client", () => {
 
     expect(
       screen.getByText(/No chart data available yet\./i),
+    ).toBeInTheDocument();
+  });
+
+  it("supports table search and chart metric toggles", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <StatsDashboardClient
+        generatedAtLabel="Mar 1, 2026, 12:00 PM"
+        stats={buildStatsPayload()}
+        statsKey="page-secret"
+      />,
+    );
+
+    await user.type(
+      screen.getByPlaceholderText(/search any column value/i),
+      "2026-03-01",
+    );
+
+    expect(
+      screen.getByText(/Showing 1 of 1 matched rows/i),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /daily/i }));
+
+    expect(
+      screen.getByRole("button", { name: /show all/i }),
     ).toBeInTheDocument();
   });
 });

@@ -104,6 +104,20 @@ const getViewDescription = (view: StatsView) =>
   STATS_VIEWS.find((entry: (typeof STATS_VIEWS)[number]) => entry.id === view)
     ?.description ?? "Analytics view";
 
+const STATS_V2_SECTION_BY_VIEW: Record<
+  StatsView,
+  "intake" | "quality" | "review"
+> = {
+  approvals: "review",
+  exports: "review",
+  institutions: "intake",
+  overview: "intake",
+  quality: "quality",
+  registrations: "intake",
+  statements: "intake",
+  submissions: "review",
+};
+
 const StatsDashboardClient = ({
   generatedAtLabel,
   stats,
@@ -143,6 +157,27 @@ const StatsDashboardClient = ({
     label: toLabel(dataset),
   }));
 
+  const statsV1Href = `/stats?${toFilterSearchParams({
+    filters: appliedFilters,
+    key: statsKey,
+    view: activeView,
+  }).toString()}`;
+  const statsV2Params = buildStatsSearchParams({
+    filters: {
+      approval: appliedFilters.approval,
+      from: appliedFilters.from,
+      limit: appliedFilters.limit,
+      statement: appliedFilters.statement,
+      teamType: appliedFilters.teamType,
+      to: appliedFilters.to,
+    },
+    key: statsKey,
+    view: activeView,
+  });
+  statsV2Params.delete("view");
+  statsV2Params.set("section", STATS_V2_SECTION_BY_VIEW[activeView]);
+  const statsV2Href = `/stats-v2?${statsV2Params.toString()}`;
+
   const renderActiveSection = () => {
     switch (activeView) {
       case "overview":
@@ -181,9 +216,18 @@ const StatsDashboardClient = ({
         <section className="rounded-2xl border border-b-4 border-fnblue bg-background/95 p-5 shadow-xl md:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="inline-flex rounded-full border border-fnblue bg-fnblue/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-fnblue">
+              <Link
+                className="inline-flex rounded-full border border-fnblue bg-fnblue/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-fnblue hover:bg-fnblue hover:text-white"
+                href={statsV1Href}
+              >
                 Private Stats Suite
-              </p>
+              </Link>
+              <Link
+                className="ml-2 inline-flex rounded-full border border-fnred bg-fnred/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-fnred hover:bg-fnred hover:text-white"
+                href={statsV2Href}
+              >
+                OPS Command centre
+              </Link>
               <h1 className="mt-3 text-3xl font-black uppercase tracking-tight md:text-4xl">
                 Unified Registration Analytics
               </h1>
