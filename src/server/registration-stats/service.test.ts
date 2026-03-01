@@ -103,6 +103,24 @@ describe("registration stats service", () => {
       "Asia/Kolkata",
     );
     expect(result.data.additionalStats.registrationTrendByDate).toEqual([]);
+    expect(result.data.additionalStats.registrationTrendByHour).toEqual([]);
+    expect(result.data.additionalStats.registrationByHourOfDay).toHaveLength(
+      24,
+    );
+    expect(result.data.additionalStats.registrationByHourOfDay[0]).toEqual({
+      hour: "00",
+      registrations: 0,
+      sharePercent: 0,
+    });
+    expect(result.data.additionalStats.registrationByHourOfDay[23]).toEqual({
+      hour: "23",
+      registrations: 0,
+      sharePercent: 0,
+    });
+    expect(result.data.additionalStats.peakHourBucket).toBeNull();
+    expect(result.data.additionalStats.peakHourCount).toBe(0);
+    expect(result.data.additionalStats.busiestHourOfDay).toBeNull();
+    expect(result.data.additionalStats.busiestHourSharePercent).toBe(0);
     expect(result.data.additionalStats.firstRegistrationAt).toBeNull();
     expect(result.data.additionalStats.lastRegistrationAt).toBeNull();
 
@@ -274,6 +292,42 @@ describe("registration stats service", () => {
       { date: "2026-02-02", registrations: 1 },
       { date: "2026-02-03", registrations: 1 },
     ]);
+    expect(result.data.additionalStats.registrationTrendByHour).toEqual([
+      { hour: "2026-02-01 13:00", registrations: 1 },
+      { hour: "2026-02-01 17:00", registrations: 1 },
+      { hour: "2026-02-02 14:00", registrations: 1 },
+      { hour: "2026-02-03 15:00", registrations: 1 },
+    ]);
+    expect(result.data.additionalStats.registrationByHourOfDay).toEqual([
+      { hour: "00", registrations: 0, sharePercent: 0 },
+      { hour: "01", registrations: 0, sharePercent: 0 },
+      { hour: "02", registrations: 0, sharePercent: 0 },
+      { hour: "03", registrations: 0, sharePercent: 0 },
+      { hour: "04", registrations: 0, sharePercent: 0 },
+      { hour: "05", registrations: 0, sharePercent: 0 },
+      { hour: "06", registrations: 0, sharePercent: 0 },
+      { hour: "07", registrations: 0, sharePercent: 0 },
+      { hour: "08", registrations: 0, sharePercent: 0 },
+      { hour: "09", registrations: 0, sharePercent: 0 },
+      { hour: "10", registrations: 0, sharePercent: 0 },
+      { hour: "11", registrations: 0, sharePercent: 0 },
+      { hour: "12", registrations: 0, sharePercent: 0 },
+      { hour: "13", registrations: 1, sharePercent: 25 },
+      { hour: "14", registrations: 1, sharePercent: 25 },
+      { hour: "15", registrations: 1, sharePercent: 25 },
+      { hour: "16", registrations: 0, sharePercent: 0 },
+      { hour: "17", registrations: 1, sharePercent: 25 },
+      { hour: "18", registrations: 0, sharePercent: 0 },
+      { hour: "19", registrations: 0, sharePercent: 0 },
+      { hour: "20", registrations: 0, sharePercent: 0 },
+      { hour: "21", registrations: 0, sharePercent: 0 },
+      { hour: "22", registrations: 0, sharePercent: 0 },
+      { hour: "23", registrations: 0, sharePercent: 0 },
+    ]);
+    expect(result.data.additionalStats.peakHourBucket).toBe("2026-02-01 13:00");
+    expect(result.data.additionalStats.peakHourCount).toBe(1);
+    expect(result.data.additionalStats.busiestHourOfDay).toBe("13");
+    expect(result.data.additionalStats.busiestHourSharePercent).toBe(25);
     expect(result.data.additionalStats.firstRegistrationAt).toBe(
       "2026-02-01T08:00:00.000Z",
     );
@@ -394,9 +448,28 @@ describe("registration stats service", () => {
     const registrationsChart = result.data.views.registrations.charts.find(
       (chart) => chart.id === "registrations-daily-cumulative",
     );
+    const registrationsHourlyChart =
+      result.data.views.registrations.charts.find(
+        (chart) => chart.id === "registrations-hourly-trend",
+      );
+    const registrationsHourOfDayChart =
+      result.data.views.registrations.charts.find(
+        (chart) => chart.id === "registrations-hour-of-day-distribution",
+      );
     expect(registrationsChart?.labels).toEqual(["2026-02-02"]);
     expect(registrationsChart?.series[0]?.data).toEqual([1]);
     expect(registrationsChart?.series[1]?.data).toEqual([1]);
+    expect(registrationsChart?.xAxisLabelMode).toBe("date");
+    expect(registrationsChart?.tooltipLabelMode).toBe("date");
+    expect(registrationsHourlyChart?.labels).toEqual(["2026-02-02 02:00"]);
+    expect(registrationsHourlyChart?.series[0]?.data).toEqual([1]);
+    expect(registrationsHourlyChart?.xAxisLabelMode).toBe("hour_bucket");
+    expect(registrationsHourlyChart?.tooltipLabelMode).toBe("hour_bucket");
+    expect(registrationsHourOfDayChart?.labels[0]).toBe("00");
+    expect(registrationsHourOfDayChart?.labels[23]).toBe("23");
+    expect(registrationsHourOfDayChart?.series[0]?.data[2]).toBe(1);
+    expect(registrationsHourOfDayChart?.xAxisLabelMode).toBe("hour_of_day");
+    expect(registrationsHourOfDayChart?.tooltipLabelMode).toBe("hour_of_day");
     expect(result.data.views.registrations.table.rows).toHaveLength(1);
     expect(result.data.views.registrations.table.total).toBe(1);
   });
@@ -535,6 +608,22 @@ describe("registration stats service", () => {
     expect(result.data.additionalStats.registrationTrendByDate).toEqual([
       { date: "2026-01-31", registrations: 1 },
       { date: "2026-02-01", registrations: 1 },
+    ]);
+    expect(result.data.additionalStats.registrationTrendByHour).toEqual([
+      { hour: "2026-01-31 23:00", registrations: 1 },
+      { hour: "2026-02-01 02:00", registrations: 1 },
+    ]);
+    expect(result.data.additionalStats.peakHourBucket).toBe("2026-01-31 23:00");
+    expect(result.data.additionalStats.peakHourCount).toBe(1);
+    expect(result.data.additionalStats.busiestHourOfDay).toBe("02");
+    expect(result.data.additionalStats.busiestHourSharePercent).toBe(50);
+    expect(
+      result.data.additionalStats.registrationByHourOfDay.filter(
+        (entry) => entry.registrations > 0,
+      ),
+    ).toEqual([
+      { hour: "02", registrations: 1, sharePercent: 50 },
+      { hour: "23", registrations: 1, sharePercent: 50 },
     ]);
   });
 });

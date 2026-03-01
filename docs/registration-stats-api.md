@@ -68,7 +68,7 @@ Behavior:
 ## Views
 
 - `overview`: executive KPIs, fill trend, submission trend, top statements
-- `registrations`: daily registrations + cumulative trend, team-type distribution
+- `registrations`: daily registrations + cumulative trend, hourly timeline, hour-of-day distribution, team-type distribution
 - `statements`: registrations vs capacity, fill-rate by statement
 - `submissions`: submitted vs pending and submission trend
 - `approvals`: approval distribution and queue age bands
@@ -131,6 +131,8 @@ type RegistrationStatsResponse = {
         id: string;
         label: string;
         chartType: "bar" | "line" | "composed" | "donut";
+        xAxisLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
+        tooltipLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
         labels: string[];
         series: Array<{ key: string; label: string; data: number[] }>;
       }>;
@@ -147,8 +149,18 @@ type RegistrationStatsResponse = {
   // Compatibility fields retained during transition:
   requiredStats: unknown;
   additionalStats: {
+    busiestHourOfDay: string | null; // "00"..."23"
+    busiestHourSharePercent: number;
+    peakHourBucket: string | null; // "YYYY-MM-DD HH:00" (IST)
+    peakHourCount: number;
+    registrationByHourOfDay: Array<{
+      hour: string; // "00"..."23"
+      registrations: number;
+      sharePercent: number;
+    }>;
     registrationTrendTimezone: "Asia/Kolkata";
     registrationTrendByDate: Array<{ date: string; registrations: number }>;
+    registrationTrendByHour: Array<{ hour: string; registrations: number }>;
     // ...existing legacy shape retained
   };
   visualData: unknown;
@@ -180,5 +192,7 @@ Compatibility note:
 ## IST Trend Semantics
 
 - `additionalStats.registrationTrendByDate[].date` uses IST day buckets.
+- `additionalStats.registrationTrendByHour[].hour` uses IST hourly buckets (`YYYY-MM-DD HH:00`).
+- `additionalStats.registrationByHourOfDay[].hour` is a 24-hour IST bucket (`00`-`23`) aggregated across filtered rows.
 - `visualData.charts.registrationTrendByDate.labels` uses IST day labels.
 - `additionalStats.registrationTrendTimezone` and `meta.registrationTrendTimezone` are both `Asia/Kolkata`.

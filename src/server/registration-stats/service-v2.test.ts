@@ -184,6 +184,47 @@ describe("registration stats v2 service", () => {
     expect(result.data.sections.intake.table.rows[0]).toMatchObject({
       teamName: "Team A",
     });
+    expect(result.data.sections.intake.cards).toEqual(
+      expect.arrayContaining([
+        {
+          id: "peakHourlyRegistrations",
+          label: "Peak Hourly Registrations",
+          unit: "teams",
+          value: 1,
+        },
+        {
+          id: "peakHourWindow",
+          label: "Peak Hour Window (IST)",
+          unit: "window",
+          value: "05 Mar, 1:00 pm",
+        },
+        {
+          id: "busiestHourOfDay",
+          label: "Busiest Hour Of Day",
+          unit: "hour",
+          value: "1 pm (3 regs, 75%)",
+        },
+      ]),
+    );
+    const intakeHourlyChart = result.data.sections.intake.charts.find(
+      (chart) => chart.id === "intake-hourly-registrations",
+    );
+    expect(intakeHourlyChart?.labels).toEqual([
+      "2026-03-05 13:00",
+      "2026-03-08 13:00",
+      "2026-03-09 13:00",
+    ]);
+    expect(intakeHourlyChart?.series[0]?.data).toEqual([1, 1, 1]);
+    expect(intakeHourlyChart?.xAxisLabelMode).toBe("hour_bucket");
+    expect(intakeHourlyChart?.tooltipLabelMode).toBe("hour_bucket");
+    const intakeHourOfDayChart = result.data.sections.intake.charts.find(
+      (chart) => chart.id === "intake-hour-of-day-distribution",
+    );
+    expect(intakeHourOfDayChart?.labels[0]).toBe("00");
+    expect(intakeHourOfDayChart?.labels[23]).toBe("23");
+    expect(intakeHourOfDayChart?.series[0]?.data[13]).toBe(3);
+    expect(intakeHourOfDayChart?.xAxisLabelMode).toBe("hour_of_day");
+    expect(intakeHourOfDayChart?.tooltipLabelMode).toBe("hour_of_day");
 
     expect(result.data.sections.review.table.rows[0]).toMatchObject({
       pendingDays: "Unknown",

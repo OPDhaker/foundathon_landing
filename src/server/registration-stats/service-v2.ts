@@ -71,6 +71,8 @@ type QueueAgeBand =
   | "8+ days"
   | "unknown";
 
+type ChartLabelMode = "default" | "date" | "hour_bucket" | "hour_of_day";
+
 type StatsV2Card = {
   id: string;
   label: string;
@@ -88,6 +90,8 @@ type StatsV2Chart = {
     key: string;
     label: string;
   }>;
+  tooltipLabelMode?: ChartLabelMode;
+  xAxisLabelMode?: ChartLabelMode;
 };
 
 type StatsV2TableCell = number | string | null;
@@ -179,6 +183,8 @@ type RowContext = {
   approvalStatus: ApprovalStatus;
   createdAt: string;
   createdAtIstDate: string | null;
+  createdAtIstHour: string | null;
+  createdAtIstHourOfDay: string | null;
   createdTimestamp: number | null;
   hasInvalidTeamMembers: boolean;
   hasPresentation: boolean;
@@ -282,6 +288,40 @@ const IST_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   timeZone: REGISTRATION_TREND_TIMEZONE,
   year: "numeric",
 });
+
+const IST_HOUR_BUCKET_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  day: "2-digit",
+  hour: "2-digit",
+  hourCycle: "h23",
+  month: "2-digit",
+  timeZone: REGISTRATION_TREND_TIMEZONE,
+  year: "numeric",
+});
+
+const IST_HOUR_OF_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  hour: "2-digit",
+  hourCycle: "h23",
+  timeZone: REGISTRATION_TREND_TIMEZONE,
+});
+
+const IST_HOUR_CARD_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "2-digit",
+  hour: "numeric",
+  hour12: true,
+  minute: "2-digit",
+  month: "short",
+  timeZone: REGISTRATION_TREND_TIMEZONE,
+});
+
+const HOUR_OF_DAY_LABEL_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  hour: "numeric",
+  hour12: true,
+  timeZone: REGISTRATION_TREND_TIMEZONE,
+});
+
+const HOUR_OF_DAY_BUCKETS = Array.from({ length: 24 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -402,6 +442,68 @@ const getIstDateString = (input: string) => {
   }
 
   return `${year}-${month}-${day}`;
+};
+
+const getIstHourBucketString = (input: string) => {
+  const parsed = new Date(input);
+  if (Number.isNaN(parsed.valueOf())) {
+    return null;
+  }
+
+  const parts = IST_HOUR_BUCKET_FORMATTER.formatToParts(parsed);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  const hour = parts.find((part) => part.type === "hour")?.value;
+
+  if (!year || !month || !day || !hour) {
+    return null;
+  }
+
+  return `${year}-${month}-${day} ${hour}:00`;
+};
+
+const getIstHourOfDayString = (input: string) => {
+  const parsed = new Date(input);
+  if (Number.isNaN(parsed.valueOf())) {
+    return null;
+  }
+
+  const parts = IST_HOUR_OF_DAY_FORMATTER.formatToParts(parsed);
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  return hour ?? null;
+};
+
+const formatHourBucketForDisplay = (bucket: string | null) => {
+  if (!bucket) {
+    return "N/A";
+  }
+
+  const [datePart, timePart] = bucket.split(" ");
+  const hour = timePart?.slice(0, 2);
+  if (!datePart || !hour) {
+    return bucket;
+  }
+
+  const parsed = new Date(`${datePart}T${hour}:00:00+05:30`);
+  if (Number.isNaN(parsed.valueOf())) {
+    return bucket;
+  }
+
+  return IST_HOUR_CARD_FORMATTER.format(parsed);
+};
+
+const formatHourOfDayLabel = (hour: string | null) => {
+  if (!hour || !/^\d{2}$/.test(hour)) {
+    return "N/A";
+  }
+
+  const parsed = new Date(`1970-01-01T${hour}:00:00+05:30`);
+  if (Number.isNaN(parsed.valueOf())) {
+    return hour;
+  }
+
+  return HOUR_OF_DAY_LABEL_FORMATTER.format(parsed);
 };
 
 const toCumulativeSeries = (values: number[]) => {
@@ -555,6 +657,8 @@ const buildRowContext = ({
   const hasPresentation = hasPresentationData(details);
   const createdTimestamp = new Date(row.created_at).valueOf();
   const createdAtIstDate = getIstDateString(row.created_at);
+  const createdAtIstHour = getIstHourBucketString(row.created_at);
+  const createdAtIstHourOfDay = getIstHourOfDayString(row.created_at);
 
   const knownStatementTitle =
     statementId && statementIdSet.has(statementId)
@@ -599,6 +703,8 @@ const buildRowContext = ({
     approvalStatus,
     createdAt: row.created_at,
     createdAtIstDate,
+    createdAtIstHour,
+    createdAtIstHourOfDay,
     createdTimestamp: Number.isNaN(createdTimestamp) ? null : createdTimestamp,
     hasInvalidTeamMembers: participantsResult.hasInvalidTeamMembers,
     hasPresentation,
@@ -676,6 +782,8 @@ const buildComputedStats = ({
   const statementIdSet = new Set(PROBLEM_STATEMENTS.map((item) => item.id));
   const statementCounts = new Map<string, number>();
   const registrationTrendCounts = new Map<string, number>();
+  const registrationTrendHourlyCounts = new Map<string, number>();
+  const registrationByHourOfDayCounts = new Map<string, number>();
   const issueCounts = new Map<string, number>();
 
   const queueAgeLabels: QueueAgeBand[] = [
@@ -731,6 +839,19 @@ const buildComputedStats = ({
       registrationTrendCounts.set(
         context.createdAtIstDate,
         (registrationTrendCounts.get(context.createdAtIstDate) ?? 0) + 1,
+      );
+    }
+    if (context.createdAtIstHour) {
+      registrationTrendHourlyCounts.set(
+        context.createdAtIstHour,
+        (registrationTrendHourlyCounts.get(context.createdAtIstHour) ?? 0) + 1,
+      );
+    }
+    if (context.createdAtIstHourOfDay) {
+      registrationByHourOfDayCounts.set(
+        context.createdAtIstHourOfDay,
+        (registrationByHourOfDayCounts.get(context.createdAtIstHourOfDay) ??
+          0) + 1,
       );
     }
 
@@ -847,10 +968,67 @@ const buildComputedStats = ({
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([date, registrations]) => ({ date, registrations }));
 
+  const registrationTrendByHour = [...registrationTrendHourlyCounts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([hour, registrations]) => ({ hour, registrations }));
+
+  const registrationByHourOfDay = HOUR_OF_DAY_BUCKETS.map((hour) => {
+    const registrations = registrationByHourOfDayCounts.get(hour) ?? 0;
+    return {
+      hour,
+      registrations,
+      sharePercent:
+        totalRowsAfterFilters > 0
+          ? roundToTwo((registrations / totalRowsAfterFilters) * 100)
+          : 0,
+    };
+  });
+
+  const peakHourBucketEntry = registrationTrendByHour.reduce<{
+    hour: string;
+    registrations: number;
+  } | null>((peak, entry) => {
+    if (!peak || entry.registrations > peak.registrations) {
+      return entry;
+    }
+    return peak;
+  }, null);
+
+  const peakHourBucket = peakHourBucketEntry?.hour ?? null;
+  const peakHourCount = peakHourBucketEntry?.registrations ?? 0;
+
+  const busiestHourOfDayEntry = registrationByHourOfDay.reduce<{
+    hour: string;
+    registrations: number;
+    sharePercent: number;
+  } | null>((peak, entry) => {
+    if (!peak || entry.registrations > peak.registrations) {
+      return entry;
+    }
+    return peak;
+  }, null);
+
+  const busiestHourOfDay =
+    totalRowsAfterFilters > 0 ? (busiestHourOfDayEntry?.hour ?? null) : null;
+  const busiestHourCount = busiestHourOfDayEntry?.registrations ?? 0;
+  const busiestHourSharePercent = busiestHourOfDayEntry?.sharePercent ?? 0;
+
   const registrationTrendLabels = registrationTrendByDate.map(
     (item) => item.date,
   );
   const registrationTrendValues = registrationTrendByDate.map(
+    (item) => item.registrations,
+  );
+  const registrationTrendHourlyLabels = registrationTrendByHour.map(
+    (item) => item.hour,
+  );
+  const registrationTrendHourlyValues = registrationTrendByHour.map(
+    (item) => item.registrations,
+  );
+  const registrationByHourOfDayLabels = registrationByHourOfDay.map(
+    (item) => item.hour,
+  );
+  const registrationByHourOfDayValues = registrationByHourOfDay.map(
     (item) => item.registrations,
   );
   const registrationCumulativeValues = toCumulativeSeries(
@@ -861,6 +1039,12 @@ const buildComputedStats = ({
     registrationTrendValues.length > 0
       ? roundToTwo(totalRowsAfterFilters / registrationTrendValues.length)
       : 0;
+  const registrationPeakHourly = peakHourCount;
+  const peakHourWindowDisplay = formatHourBucketForDisplay(peakHourBucket);
+  const busiestHourOfDayDisplay =
+    busiestHourOfDay === null
+      ? "N/A"
+      : `${formatHourOfDayLabel(busiestHourOfDay)} (${busiestHourCount} regs, ${busiestHourSharePercent}%)`;
 
   const reviewedTeams = totalRowsAfterFilters - pendingReviewTeams;
   const reviewCoveragePercent =
@@ -1087,6 +1271,24 @@ const buildComputedStats = ({
             unit: "count",
             value: nearCapacityStatements,
           },
+          {
+            id: "peakHourlyRegistrations",
+            label: "Peak Hourly Registrations",
+            unit: "teams",
+            value: registrationPeakHourly,
+          },
+          {
+            id: "peakHourWindow",
+            label: "Peak Hour Window (IST)",
+            unit: "window",
+            value: peakHourWindowDisplay,
+          },
+          {
+            id: "busiestHourOfDay",
+            label: "Busiest Hour Of Day",
+            unit: "hour",
+            value: busiestHourOfDayDisplay,
+          },
         ],
         charts: [
           {
@@ -1094,6 +1296,8 @@ const buildComputedStats = ({
             id: "intake-daily-cumulative-registrations",
             label: "Daily + Cumulative Registrations",
             labels: registrationTrendLabels,
+            tooltipLabelMode: "date",
+            xAxisLabelMode: "date",
             series: [
               {
                 data: registrationTrendValues,
@@ -1104,6 +1308,36 @@ const buildComputedStats = ({
                 data: registrationCumulativeValues,
                 key: "cumulative",
                 label: "Cumulative",
+              },
+            ],
+          },
+          {
+            chartType: "line",
+            id: "intake-hourly-registrations",
+            label: "Hourly Registrations (IST)",
+            labels: registrationTrendHourlyLabels,
+            tooltipLabelMode: "hour_bucket",
+            xAxisLabelMode: "hour_bucket",
+            series: [
+              {
+                data: registrationTrendHourlyValues,
+                key: "hourly",
+                label: "Hourly",
+              },
+            ],
+          },
+          {
+            chartType: "bar",
+            id: "intake-hour-of-day-distribution",
+            label: "Registrations by Hour of Day (IST)",
+            labels: registrationByHourOfDayLabels,
+            tooltipLabelMode: "hour_of_day",
+            xAxisLabelMode: "hour_of_day",
+            series: [
+              {
+                data: registrationByHourOfDayValues,
+                key: "hourlyDistribution",
+                label: "Registrations",
               },
             ],
           },

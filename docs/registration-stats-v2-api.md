@@ -80,6 +80,7 @@ Behavior:
 ### Sections
 
 - `intake`: registrations, fill pressure, and recent intake actions
+- `intake` includes daily trend, hourly timeline, and hour-of-day distribution (IST)
 - `review`: pending-review queue and age-band risk
 - `quality`: anomaly diagnostics and issue queue
 
@@ -141,6 +142,8 @@ type RegistrationStatsV2Response = {
         id: string;
         label: string;
         chartType: "bar" | "line" | "composed" | "donut";
+        xAxisLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
+        tooltipLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
         labels: string[];
         series: Array<{ key: string; label: string; data: number[] }>;
       }>;
@@ -158,6 +161,8 @@ type RegistrationStatsV2Response = {
         id: string;
         label: string;
         chartType: "bar" | "line" | "composed" | "donut";
+        xAxisLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
+        tooltipLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
         labels: string[];
         series: Array<{ key: string; label: string; data: number[] }>;
       }>;
@@ -175,6 +180,8 @@ type RegistrationStatsV2Response = {
         id: string;
         label: string;
         chartType: "bar" | "line" | "composed" | "donut";
+        xAxisLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
+        tooltipLabelMode?: "default" | "date" | "hour_bucket" | "hour_of_day";
         labels: string[];
         series: Array<{ key: string; label: string; data: number[] }>;
       }>;

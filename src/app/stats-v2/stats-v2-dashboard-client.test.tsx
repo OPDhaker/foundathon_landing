@@ -21,6 +21,18 @@ const buildSectionPayload = () => ({
     { id: "metric-2", label: "Metric 2", unit: "percent", value: 50 },
     { id: "metric-3", label: "Metric 3", unit: "teams", value: 1 },
     { id: "metric-4", label: "Metric 4", unit: "teams", value: 0 },
+    {
+      id: "peak-hour-window",
+      label: "Peak Hour Window (IST)",
+      unit: "window",
+      value: "01 Mar, 2:00 pm",
+    },
+    {
+      id: "busiest-hour",
+      label: "Busiest Hour Of Day",
+      unit: "hour",
+      value: "2 pm (1 regs, 50%)",
+    },
   ],
   charts: [
     {
@@ -28,9 +40,39 @@ const buildSectionPayload = () => ({
       id: "trend",
       label: "Daily + Cumulative Registrations",
       labels: ["2026-03-01", "2026-03-02"],
+      tooltipLabelMode: "date" as const,
+      xAxisLabelMode: "date" as const,
       series: [
         { data: [1, 1], key: "daily", label: "Daily" },
         { data: [1, 2], key: "cumulative", label: "Cumulative" },
+      ],
+    },
+    {
+      chartType: "line" as const,
+      id: "hourly-trend",
+      label: "Hourly Registrations (IST)",
+      labels: ["2026-03-01 14:00", "2026-03-02 15:00"],
+      tooltipLabelMode: "hour_bucket" as const,
+      xAxisLabelMode: "hour_bucket" as const,
+      series: [{ data: [1, 1], key: "hourly", label: "Hourly" }],
+    },
+    {
+      chartType: "bar" as const,
+      id: "hour-distribution",
+      label: "Registrations by Hour of Day (IST)",
+      labels: Array.from({ length: 24 }, (_, index) =>
+        String(index).padStart(2, "0"),
+      ),
+      tooltipLabelMode: "hour_of_day" as const,
+      xAxisLabelMode: "hour_of_day" as const,
+      series: [
+        {
+          data: Array.from({ length: 24 }, (_, index) =>
+            index === 14 || index === 15 ? 1 : 0,
+          ),
+          key: "hourlyDistribution",
+          label: "Registrations",
+        },
       ],
     },
   ],

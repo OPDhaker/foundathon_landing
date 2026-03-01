@@ -34,6 +34,7 @@ type StatsSectionRendererProps = {
 };
 
 type TableRow = RegistrationStatsViewPayload["table"]["rows"][number];
+type ChartLabelMode = NonNullable<RegistrationStatsViewChart["xAxisLabelMode"]>;
 type TableSortDirection = "asc" | "desc";
 type TableSortState = {
   column: string | null;
@@ -53,6 +54,43 @@ const NUMBER_FORMATTER = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 });
 const TABLE_LIMIT_OPTIONS = [10, 20, 50, 100] as const;
+
+const IST_DATE_AXIS_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "2-digit",
+  month: "short",
+  timeZone: "Asia/Kolkata",
+});
+
+const IST_DATE_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "2-digit",
+  month: "short",
+  timeZone: "Asia/Kolkata",
+  year: "numeric",
+});
+
+const IST_HOUR_BUCKET_AXIS_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "2-digit",
+  hour: "numeric",
+  hour12: true,
+  month: "short",
+  timeZone: "Asia/Kolkata",
+});
+
+const IST_HOUR_BUCKET_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "2-digit",
+  hour: "numeric",
+  hour12: true,
+  minute: "2-digit",
+  month: "short",
+  timeZone: "Asia/Kolkata",
+  year: "numeric",
+});
+
+const IST_HOUR_OF_DAY_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  hour: "numeric",
+  hour12: true,
+  timeZone: "Asia/Kolkata",
+});
 
 const toLabel = (value: string) =>
   value
@@ -184,6 +222,76 @@ const isChartEmpty = ({
   series.length === 0 ||
   series.every((serie) => serie.data.length === 0);
 
+const toDateFromIsoLabel = (label: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(label)) {
+    return null;
+  }
+
+  const parsed = new Date(`${label}T00:00:00+05:30`);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+};
+
+const toDateFromHourBucketLabel = (label: string) => {
+  const match = label.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):00$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, datePart, hourPart] = match;
+  const parsed = new Date(`${datePart}T${hourPart}:00:00+05:30`);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+};
+
+const toDateFromHourOfDayLabel = (label: string) => {
+  if (!/^\d{2}$/.test(label)) {
+    return null;
+  }
+
+  const parsed = new Date(`1970-01-01T${label}:00:00+05:30`);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+};
+
+const formatChartLabel = ({
+  label,
+  mode,
+  variant,
+}: {
+  label: string;
+  mode: ChartLabelMode;
+  variant: "axis" | "tooltip";
+}) => {
+  if (mode === "default") {
+    return label;
+  }
+
+  if (mode === "date") {
+    const parsed = toDateFromIsoLabel(label);
+    if (!parsed) {
+      return label;
+    }
+    return variant === "axis"
+      ? IST_DATE_AXIS_FORMATTER.format(parsed)
+      : IST_DATE_TOOLTIP_FORMATTER.format(parsed);
+  }
+
+  if (mode === "hour_bucket") {
+    const parsed = toDateFromHourBucketLabel(label);
+    if (!parsed) {
+      return label;
+    }
+    return variant === "axis"
+      ? IST_HOUR_BUCKET_AXIS_FORMATTER.format(parsed)
+      : IST_HOUR_BUCKET_TOOLTIP_FORMATTER.format(parsed);
+  }
+
+  const parsed = toDateFromHourOfDayLabel(label);
+  if (!parsed) {
+    return label;
+  }
+
+  return IST_HOUR_OF_DAY_FORMATTER.format(parsed);
+};
+
 const buildCartesianData = ({
   chart,
   series,
@@ -192,9 +300,20 @@ const buildCartesianData = ({
   series: RegistrationStatsViewChart["series"];
 }) =>
   chart.labels.map((label, index) => {
+    const axisLabelMode = chart.xAxisLabelMode ?? "default";
+    const tooltipLabelMode = chart.tooltipLabelMode ?? axisLabelMode;
     const row: Record<string, number | string> = {
       label,
-      shortLabel: chart.labels.length > 6 ? `#${index + 1}` : label,
+      tooltipLabel: formatChartLabel({
+        label,
+        mode: tooltipLabelMode,
+        variant: "tooltip",
+      }),
+      xAxisLabel: formatChartLabel({
+        label,
+        mode: axisLabelMode,
+        variant: "axis",
+      }),
     };
 
     for (const serie of series) {
@@ -268,13 +387,18 @@ const renderBarChart = ({
       <ChartContainer className="h-[320px]">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-          <XAxis dataKey="shortLabel" />
+          <XAxis
+            dataKey="xAxisLabel"
+            interval="preserveStartEnd"
+            minTickGap={24}
+            tick={{ fontSize: 11 }}
+          />
           <YAxis allowDecimals={false} />
           <ChartTooltip
             content={
               <ChartTooltipContent
                 labelFormatter={(_, payload) =>
-                  `Label: ${payload?.[0]?.payload.label ?? ""}`
+                  String(payload?.[0]?.payload.tooltipLabel ?? "")
                 }
               />
             }
@@ -315,13 +439,18 @@ const renderLineChart = ({
       <ChartContainer className="h-[320px]">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-          <XAxis dataKey="shortLabel" />
+          <XAxis
+            dataKey="xAxisLabel"
+            interval="preserveStartEnd"
+            minTickGap={24}
+            tick={{ fontSize: 11 }}
+          />
           <YAxis allowDecimals={false} />
           <ChartTooltip
             content={
               <ChartTooltipContent
                 labelFormatter={(_, payload) =>
-                  `Label: ${payload?.[0]?.payload.label ?? ""}`
+                  String(payload?.[0]?.payload.tooltipLabel ?? "")
                 }
               />
             }
@@ -367,18 +496,18 @@ const renderComposedChart = ({
         <ComposedChart data={data}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
           <XAxis
-            dataKey="label"
-            angle={-35}
-            height={62}
-            interval={0}
-            textAnchor="end"
+            dataKey="xAxisLabel"
+            interval="preserveStartEnd"
+            minTickGap={24}
             tick={{ fontSize: 11 }}
           />
           <YAxis allowDecimals={false} />
           <ChartTooltip
             content={
               <ChartTooltipContent
-                labelFormatter={(label) => `Date: ${String(label)}`}
+                labelFormatter={(_, payload) =>
+                  String(payload?.[0]?.payload.tooltipLabel ?? "")
+                }
               />
             }
           />

@@ -70,6 +70,16 @@ const buildStatsPayload = (): RegistrationStatsResponse => ({
     },
     registrationTrendTimezone: "Asia/Kolkata",
     registrationTrendByDate: [{ date: "2026-02-28", registrations: 1 }],
+    registrationTrendByHour: [{ hour: "2026-02-28 15:00", registrations: 1 }],
+    registrationByHourOfDay: Array.from({ length: 24 }, (_, index) => ({
+      hour: String(index).padStart(2, "0"),
+      registrations: index === 15 ? 1 : 0,
+      sharePercent: index === 15 ? 100 : 0,
+    })),
+    peakHourBucket: "2026-02-28 15:00",
+    peakHourCount: 1,
+    busiestHourOfDay: "15",
+    busiestHourSharePercent: 100,
     teamTypeBreakdown: [
       { percent: 100, teamType: "srm", teams: 1 },
       { percent: 0, teamType: "non_srm", teams: 0 },

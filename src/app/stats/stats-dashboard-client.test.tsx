@@ -16,8 +16,10 @@ vi.mock("recharts", async () => {
 
 const buildViewPayload = ({
   chartLabels = ["2026-02-28", "2026-03-01"],
+  emptyTrend = false,
 }: {
   chartLabels?: string[];
+  emptyTrend?: boolean;
 } = {}) => ({
   cards: [
     { id: "teams", label: "Total Teams", unit: "teams", value: 2 },
@@ -28,6 +30,24 @@ const buildViewPayload = ({
       value: 1,
     },
     { id: "peak", label: "Peak Daily Registrations", unit: "teams", value: 1 },
+    {
+      id: "peak-hourly",
+      label: "Peak Hourly Registrations",
+      unit: "teams",
+      value: 1,
+    },
+    {
+      id: "peak-hour-window",
+      label: "Peak Hour Window (IST)",
+      unit: "window",
+      value: "28 Feb, 3:00 pm",
+    },
+    {
+      id: "busiest-hour",
+      label: "Busiest Hour Of Day",
+      unit: "hour",
+      value: "3 pm (1 regs, 50%)",
+    },
     { id: "size", label: "Average Team Size", unit: "members", value: 4 },
   ],
   charts: [
@@ -36,12 +56,48 @@ const buildViewPayload = ({
       id: "registrations-daily-cumulative",
       label: "Daily + Cumulative Registrations",
       labels: chartLabels,
+      tooltipLabelMode: "date" as const,
+      xAxisLabelMode: "date" as const,
       series: [
         { data: chartLabels.map(() => 1), key: "daily", label: "Daily" },
         {
           data: chartLabels.map((_, index) => index + 1),
           key: "cumulative",
           label: "Cumulative",
+        },
+      ],
+    },
+    {
+      chartType: "line" as const,
+      id: "registrations-hourly-trend",
+      label: "Hourly Registration Trend (IST)",
+      labels: emptyTrend ? [] : ["2026-02-28 15:00", "2026-03-01 09:00"],
+      tooltipLabelMode: "hour_bucket" as const,
+      xAxisLabelMode: "hour_bucket" as const,
+      series: [
+        {
+          data: emptyTrend ? [] : [1, 1],
+          key: "hourly",
+          label: "Hourly",
+        },
+      ],
+    },
+    {
+      chartType: "bar" as const,
+      id: "registrations-hour-of-day-distribution",
+      label: "Registrations by Hour of Day (IST)",
+      labels: Array.from({ length: 24 }, (_, index) =>
+        String(index).padStart(2, "0"),
+      ),
+      tooltipLabelMode: "hour_of_day" as const,
+      xAxisLabelMode: "hour_of_day" as const,
+      series: [
+        {
+          data: Array.from({ length: 24 }, (_, index) =>
+            index === 9 || index === 15 ? 1 : 0,
+          ),
+          key: "hourlyDistribution",
+          label: "Registrations",
         },
       ],
     },
@@ -73,6 +129,7 @@ const buildStatsPayload = ({
 } = {}): RegistrationStatsResponse => {
   const registrationsPayload = buildViewPayload({
     chartLabels: emptyTrend ? [] : undefined,
+    emptyTrend,
   });
   const sharedViewPayload = buildViewPayload();
 
@@ -108,6 +165,21 @@ const buildStatsPayload = ({
             { date: "2026-02-28", registrations: 1 },
             { date: "2026-03-01", registrations: 1 },
           ],
+      registrationTrendByHour: emptyTrend
+        ? []
+        : [
+            { hour: "2026-02-28 15:00", registrations: 1 },
+            { hour: "2026-03-01 09:00", registrations: 1 },
+          ],
+      registrationByHourOfDay: Array.from({ length: 24 }, (_, index) => ({
+        hour: String(index).padStart(2, "0"),
+        registrations: index === 9 || index === 15 ? 1 : 0,
+        sharePercent: index === 9 || index === 15 ? 50 : 0,
+      })),
+      peakHourBucket: emptyTrend ? null : "2026-02-28 15:00",
+      peakHourCount: emptyTrend ? 0 : 1,
+      busiestHourOfDay: emptyTrend ? null : "09",
+      busiestHourSharePercent: emptyTrend ? 0 : 50,
       registrationTrendTimezone: "Asia/Kolkata",
       teamTypeBreakdown: [
         { percent: 100, teamType: "srm", teams: 2 },
@@ -296,9 +368,9 @@ describe("stats dashboard client", () => {
       />,
     );
 
-    expect(
-      screen.getByText(/No chart data available yet\./i),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText(/No chart data available yet\./i).length).toBe(
+      2,
+    );
   });
 
   it("supports table search and chart metric toggles", async () => {
