@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Copy,
   Download,
   ExternalLink,
@@ -2784,12 +2785,25 @@ export default function TeamDashboardPage() {
   const hasLockedProblemStatement = Boolean(
     problemStatement.id || problemStatement.title,
   );
+  const isProblemStatementFinalized =
+    hasLockedProblemStatement && isPresentationSubmitted;
   const problemStatementStatusLabel = hasLockedProblemStatement
-    ? "Locked"
+    ? isProblemStatementFinalized
+      ? "Locked"
+      : "Provisional"
     : "Pending";
-  const problemStatementStatusTone = hasLockedProblemStatement
-    ? "green"
-    : "red";
+  const problemStatementStatusTone =
+    hasLockedProblemStatement && isProblemStatementFinalized ? "green" : "red";
+  const statementFinalizationTitle = isProblemStatementFinalized
+    ? "Problem Statement Finalized"
+    : "Critical Rule: Final Lock Happens On PPT Submission";
+  const statementFinalizationRuleLineOne =
+    "Your problem statement is not locked just by registration.";
+  const statementFinalizationRuleLineTwo =
+    "First-come, first-served is applicable till you submit the PPT.";
+  const statementFinalizationBadgeLabel = isProblemStatementFinalized
+    ? "Finalized"
+    : "Provisional";
   const canSubmitPresentation =
     hasLockedProblemStatement &&
     !isPresentationSubmitted &&
@@ -2936,6 +2950,44 @@ export default function TeamDashboardPage() {
           </section>
         </div>
 
+        {!isPresentationSubmitted ? (
+          <section className="mb-6 rounded-2xl border-2 border-b-4 border-fnred bg-linear-to-r from-fnred/16 via-fnyellow/18 to-fnorange/16 p-5 shadow-xl md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-fnred/45 bg-fnred/14 text-fnred">
+                  <AlertTriangle size={18} strokeWidth={2.8} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-fnred">
+                    High Priority Rule
+                  </p>
+                  <h2 className="mt-1 text-lg font-black uppercase tracking-tight text-foreground md:text-xl">
+                    {statementFinalizationTitle}
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold leading-relaxed text-foreground/85 md:text-base">
+                    <span className="block">
+                      {statementFinalizationRuleLineOne}
+                    </span>
+                    <span className="mt-0.5 block">
+                      {statementFinalizationRuleLineTwo}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <span
+                className={cn(
+                  "inline-flex self-start rounded-full border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em]",
+                  isProblemStatementFinalized
+                    ? "border-fngreen/50 bg-fngreen/16 text-fngreen"
+                    : "border-fnred/45 bg-fnred/12 text-fnred",
+                )}
+              >
+                {statementFinalizationBadgeLabel}
+              </span>
+            </div>
+          </section>
+        ) : null}
+
         <AnimatePresence mode="wait" initial={false}>
           {activeTab === "overview" ? (
             <motion.section
@@ -3077,7 +3129,7 @@ export default function TeamDashboardPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ ...TAB_PANEL_TRANSITION, delay: 0.06 }}
                   className={`relative overflow-hidden rounded-2xl border border-b-4 p-6 md:p-8 shadow-xl ${
-                    hasLockedProblemStatement
+                    problemStatementStatusTone === "green"
                       ? "border-fngreen border-b-fnyellow bg-linear-to-b from-fngreen/30 to-fnyellow/10"
                       : "border-fnred border-b-fnorange bg-linear-to-b from-fnred/30 to-fnorange/10"
                   }`}
@@ -3088,7 +3140,7 @@ export default function TeamDashboardPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p
                         className={`text-xs font-extrabold uppercase tracking-wider ${
-                          hasLockedProblemStatement
+                          problemStatementStatusTone === "green"
                             ? "text-fngreen"
                             : "text-fnred"
                         }`}
@@ -3109,8 +3161,10 @@ export default function TeamDashboardPage() {
                       {problemStatementTitle}
                     </h2>
                     <p className="mt-1 max-w-3xl text-xs text-foreground/80 font-medium">
-                      {hasLockedProblemStatement
+                      {isProblemStatementFinalized
                         ? "This is your official track for Foundathon 3.0. Keep your build and pitch aligned to this statement."
+                        : hasLockedProblemStatement
+                          ? "Your selected statement is currently provisional. It becomes officially locked only after PPT submission."
                         : "No statement lock is attached to this team record yet. Move to Manage Team to complete your lock and continue."}
                     </p>
 

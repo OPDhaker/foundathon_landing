@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   getAllowedRedirectHosts,
+  getFoundathonAdminEmail,
   getFoundathonNodeEnv,
   getFoundathonSiteUrl,
   getFoundathonStatsApiKey,
@@ -8,10 +9,12 @@ import {
   getFoundathonStatsPageKey,
   getProblemLockTokenSecret,
   getSupabaseEnv,
+  isFoundathonAdminEmail,
   isFoundathonDevelopment,
 } from "@/server/env";
 
 const ENV_KEYS = [
+  "FOUNDATHON_ADMIN_EMAIL",
   "FOUNDATHON_ALLOWED_REDIRECT_HOSTS",
   "FOUNDATHON_NEXT_PUBLIC_SITE_URL",
   "FOUNDATHON_NODE_ENV",
@@ -73,6 +76,25 @@ describe("server/env", () => {
 
     expect(getFoundathonSiteUrl()).toBe("https://foundathon.example");
     expect(getProblemLockTokenSecret()).toBe("lock-secret");
+  });
+
+  it("returns normalized admin email when configured", () => {
+    process.env.FOUNDATHON_ADMIN_EMAIL = " Admin@Example.com ";
+
+    expect(getFoundathonAdminEmail()).toBe("admin@example.com");
+  });
+
+  it("returns false for admin checks when admin email is not configured", () => {
+    delete process.env.FOUNDATHON_ADMIN_EMAIL;
+
+    expect(isFoundathonAdminEmail("admin@example.com")).toBe(false);
+  });
+
+  it("matches admin email comparison case-insensitively", () => {
+    process.env.FOUNDATHON_ADMIN_EMAIL = "admin@example.com";
+
+    expect(isFoundathonAdminEmail("ADMIN@example.com")).toBe(true);
+    expect(isFoundathonAdminEmail("other@example.com")).toBe(false);
   });
 
   it("returns null for empty required values", () => {

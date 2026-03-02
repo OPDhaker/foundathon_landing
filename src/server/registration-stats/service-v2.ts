@@ -17,16 +17,14 @@ import {
   type StatsV2ExportDataset,
   type StatsV2Section,
 } from "@/app/stats-v2/stats-v2-sections";
-import {
-  PROBLEM_STATEMENT_CAP,
-  PROBLEM_STATEMENTS,
-} from "@/data/problem-statements";
+import { PROBLEM_STATEMENTS } from "@/data/problem-statements";
 import {
   EVENT_ID,
   EVENT_TITLE,
   type RegistrationRow,
 } from "@/lib/register-api";
 import { getFoundathonStatsExcludedEmails } from "@/server/env";
+import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
 import { getServiceRoleSupabaseClient } from "@/server/supabase/service-role-client";
 
 type ServiceSuccess<T> = {
@@ -769,12 +767,14 @@ const buildComputedStats = ({
   excludedRows,
   filteredContexts,
   query,
+  statementCap,
   totalRowsBeforeFilters,
 }: {
   excludedEmails: string[];
   excludedRows: number;
   filteredContexts: RowContext[];
   query: StatsV2QueryInputInternal;
+  statementCap: number;
   totalRowsBeforeFilters: number;
 }): ComputedStatsV2 => {
   const totalRowsAfterFilters = filteredContexts.length;
@@ -937,9 +937,7 @@ const buildComputedStats = ({
 
   const statementStats = PROBLEM_STATEMENTS.map((statement) => {
     const registeredTeams = statementCounts.get(statement.id) ?? 0;
-    const fillRatePercent = roundToTwo(
-      (registeredTeams / PROBLEM_STATEMENT_CAP) * 100,
-    );
+    const fillRatePercent = roundToTwo((registeredTeams / statementCap) * 100);
 
     return {
       fillRatePercent,
@@ -950,12 +948,10 @@ const buildComputedStats = ({
   });
 
   const nearCapacityStatements = statementStats.filter(
-    (item) =>
-      item.registeredTeams < PROBLEM_STATEMENT_CAP &&
-      item.fillRatePercent >= 80,
+    (item) => item.registeredTeams < statementCap && item.fillRatePercent >= 80,
   ).length;
 
-  const capacityTeams = PROBLEM_STATEMENT_CAP * PROBLEM_STATEMENTS.length;
+  const capacityTeams = statementCap * PROBLEM_STATEMENTS.length;
   const filledTeams = statementStats.reduce(
     (total, item) => total + item.registeredTeams,
     0,
@@ -1212,7 +1208,7 @@ const buildComputedStats = ({
     event: {
       eventId: EVENT_ID,
       eventTitle: EVENT_TITLE,
-      statementCap: PROBLEM_STATEMENT_CAP,
+      statementCap,
       totalCapacity: capacityTeams,
       totalStatements: PROBLEM_STATEMENTS.length,
     },
@@ -1471,6 +1467,7 @@ const getComputedRegistrationStatsV2 = async (
   queryInput?: Partial<StatsV2QueryInput>,
 ): Promise<ServiceResult<ComputedStatsV2>> => {
   const query = normalizeStatsV2QueryInput(queryInput);
+  const statementCap = await getProblemStatementCap();
 
   const supabase = getServiceRoleSupabaseClient();
   if (!supabase) {
@@ -1557,6 +1554,7 @@ const getComputedRegistrationStatsV2 = async (
       excludedRows,
       filteredContexts,
       query,
+      statementCap,
       totalRowsBeforeFilters: rowContexts.length,
     }),
   );

@@ -14,16 +14,14 @@ import {
   type StatsExportDataset,
   type StatsView,
 } from "@/app/stats/stats-views";
-import {
-  PROBLEM_STATEMENT_CAP,
-  PROBLEM_STATEMENTS,
-} from "@/data/problem-statements";
+import { PROBLEM_STATEMENTS } from "@/data/problem-statements";
 import {
   EVENT_ID,
   EVENT_TITLE,
   type RegistrationRow,
 } from "@/lib/register-api";
 import { getFoundathonStatsExcludedEmails } from "@/server/env";
+import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
 import { getServiceRoleSupabaseClient } from "@/server/supabase/service-role-client";
 
 type ServiceSuccess<T> = {
@@ -884,6 +882,7 @@ export const getRegistrationStats = async (
 
   const totalRowsBeforeFilters = rowContexts.length;
   const totalRowsAfterFilters = filteredContexts.length;
+  const statementCap = await getProblemStatementCap();
 
   const statementCounts = new Map<string, number>();
   const teamTypeCounts: Record<TeamType, number> = {
@@ -1051,18 +1050,15 @@ export const getRegistrationStats = async (
   const registrationsPerProblemStatement: StatementStats[] =
     PROBLEM_STATEMENTS.map((statement) => {
       const registeredTeams = statementCounts.get(statement.id) ?? 0;
-      const remainingTeams = Math.max(
-        PROBLEM_STATEMENT_CAP - registeredTeams,
-        0,
-      );
+      const remainingTeams = Math.max(statementCap - registeredTeams, 0);
       const fillRatePercent = roundToTwo(
-        (registeredTeams / PROBLEM_STATEMENT_CAP) * 100,
+        (registeredTeams / statementCap) * 100,
       );
 
       return {
-        cap: PROBLEM_STATEMENT_CAP,
+        cap: statementCap,
         fillRatePercent,
-        isFull: registeredTeams >= PROBLEM_STATEMENT_CAP,
+        isFull: registeredTeams >= statementCap,
         problemStatementId: statement.id,
         registeredTeams,
         remainingTeams,
@@ -1070,7 +1066,7 @@ export const getRegistrationStats = async (
       };
     });
 
-  const capacityTeams = PROBLEM_STATEMENT_CAP * PROBLEM_STATEMENTS.length;
+  const capacityTeams = statementCap * PROBLEM_STATEMENTS.length;
   const filledTeams = registrationsPerProblemStatement.reduce(
     (total, item) => total + item.registeredTeams,
     0,
@@ -2069,7 +2065,7 @@ export const getRegistrationStats = async (
     event: {
       eventId: EVENT_ID,
       eventTitle: EVENT_TITLE,
-      statementCap: PROBLEM_STATEMENT_CAP,
+      statementCap,
       totalCapacity: capacityTeams,
       totalStatements: PROBLEM_STATEMENTS.length,
     },

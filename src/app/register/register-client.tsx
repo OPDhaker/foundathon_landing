@@ -60,6 +60,20 @@ type PendingLockProblemStatement = {
 };
 type ConfirmationStep = "confirm" | "type";
 
+const shuffleList = <T,>(items: T[]): T[] => {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+
+  return shuffled;
+};
+
 const MAX_MEMBERS = 5;
 const ABANDONED_DRAFT_KEY = "foundathon:register-abandoned";
 const LOCK_COUNTDOWN_REFRESH_MS = 1000;
@@ -550,7 +564,7 @@ const RegisterClient = () => {
         return;
       }
 
-      setProblemStatements(payload.statements);
+      setProblemStatements(shuffleList(payload.statements));
       setStatementsLoadError(null);
     } catch {
       setProblemStatements([]);

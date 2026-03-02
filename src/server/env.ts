@@ -1,4 +1,5 @@
 type EnvKey =
+  | "FOUNDATHON_ADMIN_EMAIL"
   | "FOUNDATHON_ALLOWED_REDIRECT_HOSTS"
   | "FOUNDATHON_NEXT_PUBLIC_SITE_URL"
   | "FOUNDATHON_NODE_ENV"
@@ -67,6 +68,20 @@ export const isFoundathonDevelopment = () =>
 
 export const getFoundathonSiteUrl = () =>
   readOptionalEnv("FOUNDATHON_NEXT_PUBLIC_SITE_URL");
+
+export const getFoundathonAdminEmail = () => {
+  const value = readRequiredEnv("FOUNDATHON_ADMIN_EMAIL");
+  return value ? value.trim().toLowerCase() : null;
+};
+
+export const isFoundathonAdminEmail = (email: string | null | undefined) => {
+  const adminEmail = getFoundathonAdminEmail();
+  if (!adminEmail || !email) {
+    return false;
+  }
+
+  return email.trim().toLowerCase() === adminEmail;
+};
 
 export const getProblemLockTokenSecret = () =>
   readRequiredEnv("FOUNDATHON_PROBLEM_LOCK_TOKEN_SECRET");

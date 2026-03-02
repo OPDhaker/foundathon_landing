@@ -162,6 +162,7 @@ If your team uses Doppler/CI secret injection, that is fine, but local dev still
 | `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE` | Optional | Recommended for PPT uploads | Server only | `src/server/supabase/service-role-client.ts`, registration service storage ops | Bypasses Storage RLS for server-side upload/delete/list |
 | `UPSTASH_REDIS_REST_URL` | Optional | Yes | Server | `src/server/security/rate-limit.ts` | Upstash REST URL for distributed API rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | Optional | Yes | Server | `src/server/security/rate-limit.ts` | Upstash REST token for distributed API rate limiting |
+| `FOUNDATHON_ADMIN_EMAIL` | Optional | Recommended | Server | `src/app/admin/problem-statement-cap/*`, `src/app/api/admin/problem-statement-cap/route.ts` | Single admin account allowed to update statement cap |
 | `FOUNDATHON_ALLOWED_REDIRECT_HOSTS` | Optional | Recommended | Server | `src/server/auth/oauth.ts` | Comma-separated host allowlist for trusted OAuth callback redirect hosts |
 | `FOUNDATHON_PROBLEM_LOCK_TOKEN_SECRET` | Yes (for lock flow) | Yes | Server only | `src/lib/problem-lock-token.ts` | HMAC signing secret |
 | `FOUNDATHON_NEXT_PUBLIC_SITE_URL` | Optional | Recommended | Public + Server | `src/app/sitemap.ts`, `src/app/robots.ts`, auth + send routes | Canonical host + callback base |
@@ -176,6 +177,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 NEXT_PUBLIC_SUPABASE_SERVICE_ROLE=<service-role-key>
 UPSTASH_REDIS_REST_URL=https://<upstash-host>.upstash.io
 UPSTASH_REDIS_REST_TOKEN=<upstash-token>
+FOUNDATHON_ADMIN_EMAIL=admin@example.com
 FOUNDATHON_ALLOWED_REDIRECT_HOSTS=localhost:3000,foundathon.thefoundersclub.tech
 FOUNDATHON_NEXT_PUBLIC_SITE_URL=http://localhost:3000
 FOUNDATHON_RESEND_API_KEY=<resend-key>

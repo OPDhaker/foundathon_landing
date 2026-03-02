@@ -1,7 +1,4 @@
-import {
-  getProblemStatementById,
-  PROBLEM_STATEMENT_CAP,
-} from "@/data/problem-statements";
+import { getProblemStatementById } from "@/data/problem-statements";
 import {
   getPresentationExtension,
   isPresentationExtensionAllowed,
@@ -26,6 +23,7 @@ import {
   withSrmEmailNetIds,
 } from "@/lib/register-api";
 import type { TeamSubmission } from "@/lib/register-schema";
+import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
 import {
   deleteRegistrationByQueryIdForUser,
   deleteRegistrationByTeamIdForUser,
@@ -383,6 +381,7 @@ export const createTeam = async ({
   userEmail?: string;
 }): Promise<ServiceResult<{ team: { id: string } }>> => {
   const problemStatement = getProblemStatementById(input.problemStatementId);
+  const statementCap = await getProblemStatementCap();
 
   if (!problemStatement) {
     return fail("Problem statement not found.", 400);
@@ -401,7 +400,7 @@ export const createTeam = async ({
   const teamDetails = withSrmEmailNetIds(input.team);
   const details: Record<string, unknown> = {
     ...teamDetails,
-    problemStatementCap: PROBLEM_STATEMENT_CAP,
+    problemStatementCap: statementCap,
     problemStatementId: problemStatement.id,
     problemStatementLockedAt: new Date(
       lockVerification.payload.iat,
@@ -432,7 +431,7 @@ export const createTeam = async ({
     problemStatement.id,
   );
 
-  if (registeredCount >= PROBLEM_STATEMENT_CAP) {
+  if (registeredCount >= statementCap) {
     return fail("This problem statement is currently unavailable.", 409);
   }
 
@@ -634,6 +633,8 @@ export const patchTeam = async ({
   }
 
   if (input.lock) {
+    const statementCap = await getProblemStatementCap();
+
     if (existingStatementId) {
       return fail("A problem statement is already locked for this team.", 409);
     }
@@ -668,13 +669,13 @@ export const patchTeam = async ({
       problemStatement.id,
     );
 
-    if (registeredCount >= PROBLEM_STATEMENT_CAP) {
+    if (registeredCount >= statementCap) {
       return fail("This problem statement is currently unavailable.", 409);
     }
 
     updatedDetails.problemStatementId = problemStatement.id;
     updatedDetails.problemStatementTitle = problemStatement.title;
-    updatedDetails.problemStatementCap = PROBLEM_STATEMENT_CAP;
+    updatedDetails.problemStatementCap = statementCap;
     updatedDetails.problemStatementLockedAt = new Date(
       lockVerification.payload.iat,
     ).toISOString();
@@ -808,10 +809,8 @@ export const submitTeamPresentation = async ({
   }
 
   const extension = getPresentationExtension(fileName);
-  const hasValidPresentationSignature = await isPresentationFileSignatureAllowed(
-    file,
-    extension,
-  );
+  const hasValidPresentationSignature =
+    await isPresentationFileSignatureAllowed(file, extension);
   if (!hasValidPresentationSignature) {
     return fail("Invalid presentation file signature.", 400);
   }

@@ -1,6 +1,5 @@
 import {
   getProblemStatementById,
-  PROBLEM_STATEMENT_CAP,
   PROBLEM_STATEMENTS,
 } from "@/data/problem-statements";
 import { createProblemLockToken } from "@/lib/problem-lock-token";
@@ -9,6 +8,7 @@ import {
   countProblemStatementRegistrations,
   type ProblemStatementCountRow,
 } from "@/lib/problem-statement-availability";
+import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
 import { listProblemStatementRows } from "@/server/registration/repository";
 import type { RouteSupabaseClient } from "@/server/supabase/route-client";
 
@@ -52,6 +52,7 @@ export const listProblemStatementAvailability = async ({
     }>;
   }>
 > => {
+  const statementCap = await getProblemStatementCap();
   const { data, error } = await listProblemStatementRows(supabase);
 
   if (error) {
@@ -68,7 +69,7 @@ export const listProblemStatementAvailability = async ({
 
       return {
         id: statement.id,
-        isFull: registeredCount >= PROBLEM_STATEMENT_CAP,
+        isFull: registeredCount >= statementCap,
         summary: statement.summary,
         title: statement.title,
       };
@@ -96,6 +97,7 @@ export const lockProblemStatementForUser = async ({
   }>
 > => {
   const problemStatement = getProblemStatementById(problemStatementId);
+  const statementCap = await getProblemStatementCap();
 
   if (!problemStatement) {
     return fail("Problem statement not found.", 400);
@@ -112,7 +114,7 @@ export const lockProblemStatementForUser = async ({
     problemStatement.id,
   );
 
-  if (registeredCount >= PROBLEM_STATEMENT_CAP) {
+  if (registeredCount >= statementCap) {
     return fail("This problem statement is currently unavailable.", 409);
   }
 

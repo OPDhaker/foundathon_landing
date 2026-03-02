@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { FnButton } from "@/components/ui/fn-button";
 import { InView } from "@/components/ui/in-view";
-import {
-  PROBLEM_STATEMENT_CAP,
-  PROBLEM_STATEMENTS,
-} from "@/data/problem-statements";
+import { PROBLEM_STATEMENTS } from "@/data/problem-statements";
 import {
   buildProblemStatementCounts,
   type ProblemStatementCountRow,
 } from "@/lib/problem-statement-availability";
+import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
 import { EVENT_ID } from "@/server/registration/constants";
 import { getServiceRoleSupabaseClient } from "@/server/supabase/service-role-client";
 
@@ -39,6 +37,7 @@ const getProblemStatementCounts = async () => {
 };
 
 export default async function ProblemStatementsPage() {
+  const statementCap = await getProblemStatementCap();
   const counts = await getProblemStatementCounts();
   const hasLiveAvailability = counts !== null;
   const statements = PROBLEM_STATEMENTS.map((statement) => {
@@ -46,11 +45,10 @@ export default async function ProblemStatementsPage() {
       ? (counts.get(statement.id) ?? 0)
       : null;
     const isFull =
-      typeof registeredCount === "number" &&
-      registeredCount >= PROBLEM_STATEMENT_CAP;
+      typeof registeredCount === "number" && registeredCount >= statementCap;
     const remaining =
       typeof registeredCount === "number"
-        ? Math.max(PROBLEM_STATEMENT_CAP - registeredCount, 0)
+        ? Math.max(statementCap - registeredCount, 0)
         : null;
 
     return {
@@ -96,7 +94,7 @@ export default async function ProblemStatementsPage() {
     {
       label: "Max Teams / Track",
       tone: "text-fngreen",
-      value: PROBLEM_STATEMENT_CAP,
+      value: statementCap,
     },
   ] as const;
 
