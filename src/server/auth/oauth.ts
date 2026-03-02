@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import {
   AUTH_ERROR_REASON_SRM_BLOCKED,
   isBlockedLoginEmail,
@@ -12,7 +11,6 @@ import {
   createRouteSupabaseClient,
   getRouteSupabaseCredentials,
 } from "@/server/supabase/route-client";
-import { createClient } from "@/utils/supabase/server";
 
 type BeginOAuthSuccess = {
   ok: true;
@@ -26,10 +24,29 @@ type BeginOAuthFailure = {
 
 export type BeginOAuthResult = BeginOAuthSuccess | BeginOAuthFailure;
 
-const resolveLoginBaseUrl = () =>
-  isFoundathonDevelopment() ? "http://localhost:3000" : getFoundathonSiteUrl();
+const toOrigin = (value: string | null | undefined) => {
+  if (!value) {
+    return null;
+  }
 
-export const beginGoogleOAuthLogin = async (): Promise<BeginOAuthResult> => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+};
+
+const resolveLoginBaseUrl = (request: Request) => {
+  if (isFoundathonDevelopment()) {
+    return "http://localhost:3000";
+  }
+
+  return toOrigin(getFoundathonSiteUrl()) ?? toOrigin(request.url);
+};
+
+export const beginGoogleOAuthLogin = async (
+  request: Request,
+): Promise<BeginOAuthResult> => {
   const credentials = getRouteSupabaseCredentials();
   if (!credentials) {
     return {
@@ -39,7 +56,13 @@ export const beginGoogleOAuthLogin = async (): Promise<BeginOAuthResult> => {
   }
 
   const supabase = await createRouteSupabaseClient(credentials);
-  const url = resolveLoginBaseUrl();
+  const url = resolveLoginBaseUrl(request);
+  if (!url) {
+    return {
+      error: "Unable to resolve OAuth callback base URL.",
+      ok: false,
+    };
+  }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -134,8 +157,12 @@ export const resolveAuthCallbackRedirect = async (request: Request) => {
   const next = toSafeNextPath(searchParams.get("next"));
 
   if (code) {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
+    const credentials = getRouteSupabaseCredentials();
+    if (!credentials) {
+      return resolveAuthErrorRedirect(origin);
+    }
+
+    const supabase = await createRouteSupabaseClient(credentials);
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -148,7 +175,9 @@ export const resolveAuthCallbackRedirect = async (request: Request) => {
         return `${origin}${next}`;
       }
 
-      const forwardedHost = toForwardedHost(request.headers.get("x-forwarded-host"));
+      const forwardedHost = toForwardedHost(
+        request.headers.get("x-forwarded-host"),
+      );
       if (forwardedHost && isAllowedRedirectHost(forwardedHost)) {
         return `https://${forwardedHost}${next}`;
       }
@@ -166,8 +195,12 @@ export const resolveAuthCallbackRedirect = async (request: Request) => {
 };
 
 export const signOutCurrentUser = async () => {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const credentials = getRouteSupabaseCredentials();
+  if (!credentials) {
+    return;
+  }
+
+  const supabase = await createRouteSupabaseClient(credentials);
   await supabase.auth.signOut();
 };
 

@@ -32,7 +32,7 @@ export default async function AdminProblemStatementCapPage() {
     notFound();
   }
 
-  const initialCap = await getProblemStatementCap();
+  const initialCap = await getProblemStatementCap({ useCache: false });
 
   return (
     <AdminProblemStatementCapClient

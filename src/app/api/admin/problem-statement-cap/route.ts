@@ -47,7 +47,7 @@ export async function GET() {
     return auth.response;
   }
 
-  const cap = await getProblemStatementCap();
+  const cap = await getProblemStatementCap({ useCache: false });
 
   return jsonNoStore({ cap }, 200);
 }

@@ -49,8 +49,8 @@ import {
 } from "@/lib/register-schema";
 import { cn } from "@/lib/utils";
 import {
-  DASHBOARD_EVENT_VENUES,
   DASHBOARD_EVENT_OVERVIEW,
+  DASHBOARD_EVENT_VENUES,
   DASHBOARD_QUICK_RULES,
   DASHBOARD_RULE_SECTIONS,
 } from "./dashboard-rules";
@@ -804,7 +804,12 @@ const drawPosterStackLayout = ({
   const cardWidth = width - 100;
   const cardHeight = height - 84;
   drawRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, 28);
-  const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardHeight);
+  const cardGradient = ctx.createLinearGradient(
+    cardX,
+    cardY,
+    cardX,
+    cardY + cardHeight,
+  );
   cardGradient.addColorStop(0, theme.cardStops[0]);
   cardGradient.addColorStop(0.36, theme.cardStops[1]);
   cardGradient.addColorStop(1, theme.cardStops[2]);
@@ -860,7 +865,12 @@ const drawPosterStackLayout = ({
 
   ctx.fillStyle = theme.metaLabelColor;
   ctx.font = "700 18px 'Helvetica Neue', Arial, sans-serif";
-  ctx.fillText(`LOCKED TRACK: ${statementLine}`, cardX + 34, cardY + 222, cardWidth - 68);
+  ctx.fillText(
+    `LOCKED TRACK: ${statementLine}`,
+    cardX + 34,
+    cardY + 222,
+    cardWidth - 68,
+  );
 
   const infoX = cardX + 28;
   const infoY = cardY + 242;
@@ -939,7 +949,12 @@ const drawPosterStackLayout = ({
     "- Follow your assigned track queue.",
   ];
   checklist.forEach((line, index) => {
-    ctx.fillText(line, rightPanelX + 20, bottomY + 82 + index * 40, rightPanelWidth - 40);
+    ctx.fillText(
+      line,
+      rightPanelX + 20,
+      bottomY + 82 + index * 40,
+      rightPanelWidth - 40,
+    );
   });
 };
 
@@ -1116,7 +1131,12 @@ const drawBoardwalkPassLayout = ({
   const cardWidth = width - 112;
   const cardHeight = height - 88;
   drawRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, 22);
-  const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardHeight);
+  const cardGradient = ctx.createLinearGradient(
+    cardX,
+    cardY,
+    cardX,
+    cardY + cardHeight,
+  );
   cardGradient.addColorStop(0, theme.cardStops[0]);
   cardGradient.addColorStop(0.5, theme.cardStops[1]);
   cardGradient.addColorStop(1, theme.cardStops[2]);
@@ -1126,7 +1146,14 @@ const drawBoardwalkPassLayout = ({
   ctx.strokeStyle = theme.cardStrokeColor;
   ctx.stroke();
 
-  drawRoundedRect(ctx, cardX + 12, cardY + 12, cardWidth - 24, cardHeight - 24, 16);
+  drawRoundedRect(
+    ctx,
+    cardX + 12,
+    cardY + 12,
+    cardWidth - 24,
+    cardHeight - 24,
+    16,
+  );
   ctx.lineWidth = 2;
   ctx.strokeStyle = theme.splitStrokeColor;
   ctx.stroke();
@@ -1254,7 +1281,12 @@ const drawBoardwalkPassLayout = ({
   ctx.fill();
   ctx.fillStyle = "#ecfdf5";
   ctx.font = "700 13px 'Helvetica Neue', Arial, sans-serif";
-  ctx.fillText(issuedLine, centerX + 12, cardY + cardHeight - 44, centerWidth - 24);
+  ctx.fillText(
+    issuedLine,
+    centerX + 12,
+    cardY + cardHeight - 44,
+    centerWidth - 24,
+  );
 };
 
 const buildAcceptedTeamTicketDataUrl = async ({
@@ -1556,12 +1588,12 @@ export default function TeamDashboardPage() {
   const normalizedLegacyLockConfirmationPhrase = normalizeConfirmationText(
     legacyLockConfirmationPhrase,
   );
-  const normalizedQuotedLegacyLockConfirmationPhrase = normalizeConfirmationText(
-    `"${legacyLockConfirmationPhrase}"`,
-  );
+  const normalizedQuotedLegacyLockConfirmationPhrase =
+    normalizeConfirmationText(`"${legacyLockConfirmationPhrase}"`);
   const canConfirmDelete =
     normalizedDeleteConfirmationInput === normalizedDeleteConfirmationPhrase ||
-    normalizedDeleteConfirmationInput === normalizedQuotedDeleteConfirmationPhrase;
+    normalizedDeleteConfirmationInput ===
+      normalizedQuotedDeleteConfirmationPhrase;
   const canConfirmLegacyLock =
     Boolean(pendingLockProblemStatement) &&
     (normalizedLegacyLockConfirmationInput ===
@@ -1870,7 +1902,10 @@ export default function TeamDashboardPage() {
       return;
     }
 
-    window.localStorage.setItem(TEAM_TICKET_THEME_STORAGE_KEY, teamTicketThemeId);
+    window.localStorage.setItem(
+      TEAM_TICKET_THEME_STORAGE_KEY,
+      teamTicketThemeId,
+    );
   }, [teamTicketThemeId]);
 
   useEffect(() => {
@@ -3165,7 +3200,7 @@ export default function TeamDashboardPage() {
                         ? "This is your official track for Foundathon 3.0. Keep your build and pitch aligned to this statement."
                         : hasLockedProblemStatement
                           ? "Your selected statement is currently provisional. It becomes officially locked only after PPT submission."
-                        : "No statement lock is attached to this team record yet. Move to Manage Team to complete your lock and continue."}
+                          : "No statement lock is attached to this team record yet. Move to Manage Team to complete your lock and continue."}
                     </p>
 
                     {/* <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -4384,8 +4419,8 @@ export default function TeamDashboardPage() {
                     {problemStatement.title || "N/A"}
                   </p>
                   <p className="text-xs text-foreground/60">
-                    Pick your favorite ticket style, then download this ticket for
-                    on-ground check-ins or share instantly on WhatsApp.
+                    Pick your favorite ticket style, then download this ticket
+                    for on-ground check-ins or share instantly on WhatsApp.
                   </p>
 
                   <div className="space-y-2 pt-1">
@@ -4444,67 +4479,67 @@ export default function TeamDashboardPage() {
             aria-labelledby="presentation-preview-title"
           >
             <div className="flex h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-b-4 border-fnblue bg-background shadow-2xl">
-            <div className="flex items-start justify-between gap-3 border-b border-foreground/10 px-4 py-3 md:px-5">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-widest text-fnblue">
-                  Presentation Preview
-                </p>
-                <h3
-                  id="presentation-preview-title"
-                  className="mt-1 text-lg font-black uppercase tracking-tight md:text-xl"
-                >
-                  {presentation.fileName || "Uploaded PPT"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                aria-label="Close presentation preview"
-                onClick={() => setShowPresentationPreview(false)}
-                className="inline-flex size-8 items-center justify-center rounded-md border border-foreground/20 bg-white text-foreground/70 transition-colors hover:bg-fnred/10 hover:text-fnred focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fnred/40"
-              >
-                <X size={16} strokeWidth={2.6} />
-              </button>
-            </div>
-
-            <div className="relative flex-1 bg-slate-100">
-              {presentationPreviewUrl ? (
-                <iframe
-                  title="Uploaded team presentation preview"
-                  src={presentationPreviewUrl}
-                  className="h-full w-full"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-foreground/75">
-                  Preview is unavailable for this file right now.
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-foreground/10 bg-white/85 px-4 py-3">
-              <p className="text-xs text-foreground/70">
-                If preview does not load, open the uploaded file directly.
-              </p>
-              <div className="flex gap-2">
-                <FnButton asChild tone="gray" size="sm">
-                  <a
-                    href={presentation.publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              <div className="flex items-start justify-between gap-3 border-b border-foreground/10 px-4 py-3 md:px-5">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-fnblue">
+                    Presentation Preview
+                  </p>
+                  <h3
+                    id="presentation-preview-title"
+                    className="mt-1 text-lg font-black uppercase tracking-tight md:text-xl"
                   >
-                    <ExternalLink size={16} strokeWidth={3} />
-                    Open in New Tab
-                  </a>
-                </FnButton>
-                <FnButton
+                    {presentation.fileName || "Uploaded PPT"}
+                  </h3>
+                </div>
+                <button
                   type="button"
-                  size="sm"
+                  aria-label="Close presentation preview"
                   onClick={() => setShowPresentationPreview(false)}
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-foreground/20 bg-white text-foreground/70 transition-colors hover:bg-fnred/10 hover:text-fnred focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fnred/40"
                 >
-                  Close
-                </FnButton>
+                  <X size={16} strokeWidth={2.6} />
+                </button>
               </div>
-            </div>
+
+              <div className="relative flex-1 bg-slate-100">
+                {presentationPreviewUrl ? (
+                  <iframe
+                    title="Uploaded team presentation preview"
+                    src={presentationPreviewUrl}
+                    className="h-full w-full"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-6 text-center text-sm text-foreground/75">
+                    Preview is unavailable for this file right now.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-foreground/10 bg-white/85 px-4 py-3">
+                <p className="text-xs text-foreground/70">
+                  If preview does not load, open the uploaded file directly.
+                </p>
+                <div className="flex gap-2">
+                  <FnButton asChild tone="gray" size="sm">
+                    <a
+                      href={presentation.publicUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink size={16} strokeWidth={3} />
+                      Open in New Tab
+                    </a>
+                  </FnButton>
+                  <FnButton
+                    type="button"
+                    size="sm"
+                    onClick={() => setShowPresentationPreview(false)}
+                  >
+                    Close
+                  </FnButton>
+                </div>
+              </div>
             </div>
           </div>
         </ModalPortal>
@@ -4519,48 +4554,48 @@ export default function TeamDashboardPage() {
             aria-labelledby="presentation-submit-title"
           >
             <div className="w-full max-w-md rounded-xl border border-b-4 border-fnred bg-background p-6 shadow-xl">
-            <p
-              id="presentation-submit-title"
-              className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
-            >
-              Confirm PPT Submission
-            </p>
-            <p className="mt-3 text-sm text-foreground/80">
-              This action cannot be reverted. Are you sure you want to submit
-              this presentation?
-            </p>
-            <p className="mt-3 rounded-md border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm font-semibold">
-              {pendingPresentationFile.name}
-            </p>
-            <p className="mt-2 text-xs text-foreground/70">
-              Once submitted, this team can only view the uploaded PPT and
-              cannot replace it.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <FnButton
-                type="button"
-                onClick={() => {
-                  clearPendingPresentationSelection();
-                  setShowPresentationConfirm(false);
-                }}
-                tone="gray"
-                size="sm"
-                disabled={isSubmittingPresentation}
+              <p
+                id="presentation-submit-title"
+                className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
               >
-                Cancel
-              </FnButton>
-              <FnButton
-                type="button"
-                onClick={submitPresentation}
-                tone="red"
-                size="sm"
-                loading={isSubmittingPresentation}
-                loadingText="Submitting..."
-                disabled={isSubmittingPresentation}
-              >
-                Submit PPT
-              </FnButton>
-            </div>
+                Confirm PPT Submission
+              </p>
+              <p className="mt-3 text-sm text-foreground/80">
+                This action cannot be reverted. Are you sure you want to submit
+                this presentation?
+              </p>
+              <p className="mt-3 rounded-md border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm font-semibold">
+                {pendingPresentationFile.name}
+              </p>
+              <p className="mt-2 text-xs text-foreground/70">
+                Once submitted, this team can only view the uploaded PPT and
+                cannot replace it.
+              </p>
+              <div className="mt-6 flex justify-end gap-2">
+                <FnButton
+                  type="button"
+                  onClick={() => {
+                    clearPendingPresentationSelection();
+                    setShowPresentationConfirm(false);
+                  }}
+                  tone="gray"
+                  size="sm"
+                  disabled={isSubmittingPresentation}
+                >
+                  Cancel
+                </FnButton>
+                <FnButton
+                  type="button"
+                  onClick={submitPresentation}
+                  tone="red"
+                  size="sm"
+                  loading={isSubmittingPresentation}
+                  loadingText="Submitting..."
+                  disabled={isSubmittingPresentation}
+                >
+                  Submit PPT
+                </FnButton>
+              </div>
             </div>
           </div>
         </ModalPortal>
@@ -4575,87 +4610,87 @@ export default function TeamDashboardPage() {
             aria-labelledby="legacy-lock-title"
           >
             <div className="w-full max-w-md rounded-xl border border-b-4 border-fnred bg-background p-6 shadow-xl">
-            <p
-              id="legacy-lock-title"
-              className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
-            >
-              Confirm Problem Statement Lock
-            </p>
-            <p className="mt-3 text-sm text-foreground/80">
-              This action cannot be reverted. Are you sure you want to lock this
-              problem statement?
-            </p>
-            <p className="mt-3 rounded-md border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm font-semibold">
-              {pendingLockProblemStatement.title}
-            </p>
-            {legacyLockConfirmationStep === "confirm" ? (
-              <div className="mt-6 flex justify-end gap-2">
-                <FnButton
-                  type="button"
-                  onClick={closeLegacyLockConfirm}
-                  tone="gray"
-                  size="sm"
-                >
-                  Cancel
-                </FnButton>
-                <FnButton
-                  type="button"
-                  onClick={proceedLegacyLockToTypeStep}
-                  tone="red"
-                  size="sm"
-                >
-                  Continue
-                </FnButton>
-              </div>
-            ) : (
-              <>
-                <div className="mt-3 rounded-lg border border-fnred/25 bg-fnred/5 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-fnred">
-                    Final Confirmation
-                  </p>
-                  <p className="mt-1 text-xs text-foreground/75">
-                    Type this exact phrase to continue:
-                  </p>
-                  <p className="mt-2 rounded-md border border-foreground/15 bg-white px-3 py-2 font-mono text-sm font-semibold text-foreground">
-                    "{legacyLockConfirmationPhrase}"
-                  </p>
-                </div>
-                <p className="mt-3 text-xs text-foreground/70">
-                  Include spaces exactly as shown above.
-                </p>
-                <input
-                  type="text"
-                  value={legacyLockConfirmationInput}
-                  onChange={(event) =>
-                    setLegacyLockConfirmationInput(event.target.value)
-                  }
-                  placeholder={`Type "${legacyLockConfirmationPhrase}"`}
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="mt-2 w-full rounded-md border border-foreground/20 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-fnblue/50"
-                />
+              <p
+                id="legacy-lock-title"
+                className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
+              >
+                Confirm Problem Statement Lock
+              </p>
+              <p className="mt-3 text-sm text-foreground/80">
+                This action cannot be reverted. Are you sure you want to lock
+                this problem statement?
+              </p>
+              <p className="mt-3 rounded-md border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm font-semibold">
+                {pendingLockProblemStatement.title}
+              </p>
+              {legacyLockConfirmationStep === "confirm" ? (
                 <div className="mt-6 flex justify-end gap-2">
                   <FnButton
                     type="button"
-                    onClick={backLegacyLockToConfirmStep}
+                    onClick={closeLegacyLockConfirm}
                     tone="gray"
                     size="sm"
                   >
-                    Back
+                    Cancel
                   </FnButton>
                   <FnButton
                     type="button"
-                    onClick={confirmLegacyProblemStatementLock}
+                    onClick={proceedLegacyLockToTypeStep}
                     tone="red"
                     size="sm"
-                    disabled={!canConfirmLegacyLock}
                   >
-                    Yes, Lock Statement
+                    Continue
                   </FnButton>
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className="mt-3 rounded-lg border border-fnred/25 bg-fnred/5 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-fnred">
+                      Final Confirmation
+                    </p>
+                    <p className="mt-1 text-xs text-foreground/75">
+                      Type this exact phrase to continue:
+                    </p>
+                    <p className="mt-2 rounded-md border border-foreground/15 bg-white px-3 py-2 font-mono text-sm font-semibold text-foreground">
+                      "{legacyLockConfirmationPhrase}"
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs text-foreground/70">
+                    Include spaces exactly as shown above.
+                  </p>
+                  <input
+                    type="text"
+                    value={legacyLockConfirmationInput}
+                    onChange={(event) =>
+                      setLegacyLockConfirmationInput(event.target.value)
+                    }
+                    placeholder={`Type "${legacyLockConfirmationPhrase}"`}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="mt-2 w-full rounded-md border border-foreground/20 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-fnblue/50"
+                  />
+                  <div className="mt-6 flex justify-end gap-2">
+                    <FnButton
+                      type="button"
+                      onClick={backLegacyLockToConfirmStep}
+                      tone="gray"
+                      size="sm"
+                    >
+                      Back
+                    </FnButton>
+                    <FnButton
+                      type="button"
+                      onClick={confirmLegacyProblemStatementLock}
+                      tone="red"
+                      size="sm"
+                      disabled={!canConfirmLegacyLock}
+                    >
+                      Yes, Lock Statement
+                    </FnButton>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </ModalPortal>
@@ -4670,90 +4705,90 @@ export default function TeamDashboardPage() {
             aria-labelledby="delete-team-title"
           >
             <div className="w-full max-w-md rounded-xl border border-b-4 border-fnred bg-background p-6 shadow-xl">
-            <p
-              id="delete-team-title"
-              className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
-            >
-              Confirm Team Deletion
-            </p>
-            <p className="mt-3 text-sm text-foreground/80">
-              This action permanently removes the team record and cannot be
-              undone.
-            </p>
-            {deleteConfirmationStep === "confirm" ? (
-              <div className="mt-6 flex justify-end gap-2">
-                <FnButton
-                  type="button"
-                  onClick={closeDeleteConfirm}
-                  tone="gray"
-                  size="sm"
-                  disabled={isDeleting}
-                >
-                  Cancel
-                </FnButton>
-                <FnButton
-                  type="button"
-                  onClick={proceedDeleteToTypeStep}
-                  tone="red"
-                  size="sm"
-                  disabled={isDeleting}
-                >
-                  Continue
-                </FnButton>
-              </div>
-            ) : (
-              <>
-                <div className="mt-3 rounded-lg border border-fnred/25 bg-fnred/5 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-fnred">
-                    Final Confirmation
-                  </p>
-                  <p className="mt-1 text-xs text-foreground/75">
-                    Type this exact phrase to continue:
-                  </p>
-                  <p className="mt-2 rounded-md border border-foreground/15 bg-white px-3 py-2 font-mono text-sm font-semibold text-foreground">
-                    "{deleteConfirmationPhrase}"
-                  </p>
-                </div>
-                <p className="mt-3 text-xs text-foreground/70">
-                  Include spaces exactly as shown above.
-                </p>
-                <input
-                  type="text"
-                  value={deleteConfirmationInput}
-                  onChange={(event) =>
-                    setDeleteConfirmationInput(event.target.value)
-                  }
-                  placeholder={`Type "${deleteConfirmationPhrase}"`}
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="mt-2 w-full rounded-md border border-foreground/20 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-fnblue/50"
-                />
+              <p
+                id="delete-team-title"
+                className="text-sm uppercase tracking-[0.18em] font-bold text-fnred"
+              >
+                Confirm Team Deletion
+              </p>
+              <p className="mt-3 text-sm text-foreground/80">
+                This action permanently removes the team record and cannot be
+                undone.
+              </p>
+              {deleteConfirmationStep === "confirm" ? (
                 <div className="mt-6 flex justify-end gap-2">
                   <FnButton
                     type="button"
-                    onClick={backDeleteToConfirmStep}
+                    onClick={closeDeleteConfirm}
                     tone="gray"
                     size="sm"
                     disabled={isDeleting}
                   >
-                    Back
+                    Cancel
                   </FnButton>
                   <FnButton
                     type="button"
-                    onClick={deleteTeam}
+                    onClick={proceedDeleteToTypeStep}
                     tone="red"
                     size="sm"
-                    loading={isDeleting}
-                    loadingText="Deleting..."
-                    disabled={isDeleting || !canConfirmDelete}
+                    disabled={isDeleting}
                   >
-                    <Trash2 size={16} strokeWidth={3} />
-                    Delete Team
+                    Continue
                   </FnButton>
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className="mt-3 rounded-lg border border-fnred/25 bg-fnred/5 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-fnred">
+                      Final Confirmation
+                    </p>
+                    <p className="mt-1 text-xs text-foreground/75">
+                      Type this exact phrase to continue:
+                    </p>
+                    <p className="mt-2 rounded-md border border-foreground/15 bg-white px-3 py-2 font-mono text-sm font-semibold text-foreground">
+                      "{deleteConfirmationPhrase}"
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs text-foreground/70">
+                    Include spaces exactly as shown above.
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmationInput}
+                    onChange={(event) =>
+                      setDeleteConfirmationInput(event.target.value)
+                    }
+                    placeholder={`Type "${deleteConfirmationPhrase}"`}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="mt-2 w-full rounded-md border border-foreground/20 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-fnblue/50"
+                  />
+                  <div className="mt-6 flex justify-end gap-2">
+                    <FnButton
+                      type="button"
+                      onClick={backDeleteToConfirmStep}
+                      tone="gray"
+                      size="sm"
+                      disabled={isDeleting}
+                    >
+                      Back
+                    </FnButton>
+                    <FnButton
+                      type="button"
+                      onClick={deleteTeam}
+                      tone="red"
+                      size="sm"
+                      loading={isDeleting}
+                      loadingText="Deleting..."
+                      disabled={isDeleting || !canConfirmDelete}
+                    >
+                      <Trash2 size={16} strokeWidth={3} />
+                      Delete Team
+                    </FnButton>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </ModalPortal>

@@ -53,9 +53,15 @@ export const clearProblemStatementCapCacheForTests = () => {
   capCache = null;
 };
 
-export const getProblemStatementCap = async () => {
+type GetProblemStatementCapOptions = {
+  useCache?: boolean;
+};
+
+export const getProblemStatementCap = async ({
+  useCache = true,
+}: GetProblemStatementCapOptions = {}) => {
   const nowMs = Date.now();
-  if (capCache && capCache.expiresAtMs > nowMs) {
+  if (useCache && capCache && capCache.expiresAtMs > nowMs) {
     return capCache.value;
   }
 

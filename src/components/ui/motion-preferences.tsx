@@ -148,7 +148,10 @@ export const MotionPreferencesProvider = ({
       return;
     }
 
-    window.localStorage.setItem(CURSOR_PREFERENCE_STORAGE_KEY, cursorPreference);
+    window.localStorage.setItem(
+      CURSOR_PREFERENCE_STORAGE_KEY,
+      cursorPreference,
+    );
   }, [cursorPreference]);
 
   const resolved = useMemo(
@@ -162,9 +165,7 @@ export const MotionPreferencesProvider = ({
 
   const isCustomCursorEnabled = useMemo(
     () =>
-      cursorPreference === "enabled" &&
-      resolved === "normal" &&
-      hasFinePointer,
+      cursorPreference === "enabled" && resolved === "normal" && hasFinePointer,
     [cursorPreference, hasFinePointer, resolved],
   );
 
