@@ -58,7 +58,9 @@ describe("CustomCursor", () => {
     mocks.isCustomCursorEnabled = true;
     render(<CustomCursor />);
 
-    expect(document.querySelector('[data-cursor-layer="shell"]')).not.toBeNull();
+    expect(
+      document.querySelector('[data-cursor-layer="shell"]'),
+    ).not.toBeNull();
     expect(document.querySelector('[data-cursor-layer="dot"]')).not.toBeNull();
   });
 

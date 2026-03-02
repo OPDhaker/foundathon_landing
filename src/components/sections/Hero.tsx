@@ -60,7 +60,10 @@ const Hero = async () => {
                 </span>
                 <p className="truncate">
                   Do not use SRM email to sign in.
-                  <span className="hidden sm:inline"> Use personal email instead.</span>
+                  <span className="hidden sm:inline">
+                    {" "}
+                    Use personal email instead.
+                  </span>
                 </p>
               </div>
             </div>

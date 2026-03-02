@@ -143,8 +143,12 @@ export default function CustomCursor() {
       setIsPressed(false);
     };
 
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    window.addEventListener("pointerdown", handlePointerDown, {
+      passive: true,
+    });
     window.addEventListener("pointerup", handlePointerUp, { passive: true });
     window.addEventListener("pointercancel", hideCursor, { passive: true });
     window.addEventListener("blur", hideCursor);
@@ -165,7 +169,10 @@ export default function CustomCursor() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[120]" aria-hidden="true">
+    <div
+      className="pointer-events-none fixed inset-0 z-[120]"
+      aria-hidden="true"
+    >
       <motion.div
         data-cursor-layer="shell"
         data-cursor-kind={kind}

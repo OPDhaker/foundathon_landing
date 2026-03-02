@@ -2,19 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTH_ERROR_REASON_SRM_BLOCKED } from "@/server/auth/email-policy";
 
 const mocks = vi.hoisted(() => ({
-  cookies: vi.fn(),
-  createClient: vi.fn(),
+  createRouteSupabaseClient: vi.fn(),
   enforceIpRateLimit: vi.fn(),
   exchangeCodeForSession: vi.fn(),
+  getRouteSupabaseCredentials: vi.fn(),
   signOut: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({
-  cookies: mocks.cookies,
-}));
-
-vi.mock("@/utils/supabase/server", () => ({
-  createClient: mocks.createClient,
+vi.mock("@/server/supabase/route-client", () => ({
+  createRouteSupabaseClient: mocks.createRouteSupabaseClient,
+  getRouteSupabaseCredentials: mocks.getRouteSupabaseCredentials,
 }));
 
 vi.mock("@/server/security/rate-limit", () => ({
@@ -44,20 +41,23 @@ const restoreEnv = () => {
 describe("/api/auth/callback GET", () => {
   beforeEach(() => {
     vi.resetModules();
-    mocks.cookies.mockReset();
-    mocks.createClient.mockReset();
+    mocks.createRouteSupabaseClient.mockReset();
     mocks.enforceIpRateLimit.mockReset();
     mocks.exchangeCodeForSession.mockReset();
+    mocks.getRouteSupabaseCredentials.mockReset();
     mocks.signOut.mockReset();
 
-    mocks.cookies.mockReturnValue({});
     mocks.exchangeCodeForSession.mockResolvedValue({
       data: { user: { email: "lead@example.com" } },
       error: null,
     });
+    mocks.getRouteSupabaseCredentials.mockReturnValue({
+      anonKey: "anon-key",
+      url: "https://supabase.example",
+    });
     mocks.signOut.mockResolvedValue({ error: null });
     mocks.enforceIpRateLimit.mockResolvedValue(null);
-    mocks.createClient.mockResolvedValue({
+    mocks.createRouteSupabaseClient.mockResolvedValue({
       auth: {
         exchangeCodeForSession: mocks.exchangeCodeForSession,
         signOut: mocks.signOut,
@@ -83,7 +83,7 @@ describe("/api/auth/callback GET", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost/auth/auth-code-error",
     );
-    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.createRouteSupabaseClient).not.toHaveBeenCalled();
   });
 
   it("redirects to safe internal next path when provided", async () => {
@@ -176,7 +176,9 @@ describe("/api/auth/callback GET", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://internal-host/register");
+    expect(response.headers.get("location")).toBe(
+      "https://internal-host/register",
+    );
   });
 
   it("returns 429 when callback endpoint is rate limited", async () => {
@@ -195,6 +197,6 @@ describe("/api/auth/callback GET", () => {
 
     expect(response.status).toBe(429);
     expect(body.code).toBe("RATE_LIMITED");
-    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.createRouteSupabaseClient).not.toHaveBeenCalled();
   });
 });

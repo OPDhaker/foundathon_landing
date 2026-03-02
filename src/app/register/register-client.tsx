@@ -17,10 +17,7 @@ import ModalPortal from "@/components/ui/modal-portal";
 import { useMotionPreferences } from "@/components/ui/motion-preferences";
 import { useRouteProgress } from "@/components/ui/route-progress";
 import { toast } from "@/hooks/use-toast";
-import {
-  MOTION_TRANSITIONS,
-  MOTION_VARIANTS,
-} from "@/lib/motion-system";
+import { MOTION_TRANSITIONS, MOTION_VARIANTS } from "@/lib/motion-system";
 import {
   type NonSrmMember,
   nonSrmMemberSchema,
@@ -381,7 +378,8 @@ const RegisterClient = () => {
   const canConfirmProblemStatementLock =
     Boolean(pendingLockProblemStatement) &&
     (normalizedLockConfirmationInput === normalizedLockConfirmationPhrase ||
-      normalizedLockConfirmationInput === normalizedQuotedLockConfirmationPhrase);
+      normalizedLockConfirmationInput ===
+        normalizedQuotedLockConfirmationPhrase);
   const teamPayload = useMemo(
     () =>
       teamType === "srm"
@@ -528,12 +526,10 @@ const RegisterClient = () => {
       const response = await fetch("/api/problem-statements", {
         method: "GET",
       });
-      const payload = (await response.json().catch(() => null)) as
-        | {
-            error?: string;
-            statements?: ProblemStatementAvailability[];
-          }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+        statements?: ProblemStatementAvailability[];
+      } | null;
 
       if (!response.ok) {
         const errorMessage =
@@ -1606,11 +1602,11 @@ const RegisterClient = () => {
                     {!isLoadingStatements &&
                       !statementsLoadError &&
                       problemStatements.length === 0 && (
-                      <p className="mt-6 text-sm text-foreground/70">
-                        Problem statements are unavailable right now. Please
-                        retry.
-                      </p>
-                    )}
+                        <p className="mt-6 text-sm text-foreground/70">
+                          Problem statements are unavailable right now. Please
+                          retry.
+                        </p>
+                      )}
 
                     <div className="mt-6 flex flex-wrap gap-3">
                       <FnButton
@@ -2006,9 +2002,7 @@ const Input = ({
   pattern,
 }: InputProps) => (
   <label className="block">
-    <p className="text-xs text-foreground/80 font-medium mb-1">
-      {label}
-    </p>
+    <p className="text-xs text-foreground/80 font-medium mb-1">{label}</p>
     <input
       id={id}
       type={type}
@@ -2179,9 +2173,7 @@ const NumberInput = ({
   error,
 }: NumberInputProps) => (
   <label className="block">
-    <p className="text-xs text-foreground/80 font-medium mb-1">
-      {label}
-    </p>
+    <p className="text-xs text-foreground/80 font-medium mb-1">{label}</p>
     <input
       id={id}
       type="tel"

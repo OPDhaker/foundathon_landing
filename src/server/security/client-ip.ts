@@ -3,10 +3,12 @@ const toSingleHeaderValue = (value: string | null) => {
     return "";
   }
 
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)[0] ?? "";
+  return (
+    value
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)[0] ?? ""
+  );
 };
 
 export const getClientIp = (request: Request) => {

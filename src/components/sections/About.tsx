@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  MOTION_TRANSITIONS,
-  MOTION_VARIANTS,
-} from "@/lib/motion-system";
+import { MOTION_TRANSITIONS, MOTION_VARIANTS } from "@/lib/motion-system";
 import { InView } from "../ui/in-view";
 
 const problemHighlights = [

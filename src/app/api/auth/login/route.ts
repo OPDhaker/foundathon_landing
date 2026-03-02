@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     return rateLimitResponse;
   }
 
-  const result = await beginGoogleOAuthLogin();
+  const result = await beginGoogleOAuthLogin(request);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }

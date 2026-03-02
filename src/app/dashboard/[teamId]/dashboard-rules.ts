@@ -87,9 +87,7 @@ export const DASHBOARD_RULE_SECTIONS: DashboardRuleSection[] = [
   },
   {
     id: "submission-rules",
-    items: [
-      "Late submissions will not be accepted.",
-    ],
+    items: ["Late submissions will not be accepted."],
     title: "Submission Rules",
   },
   {

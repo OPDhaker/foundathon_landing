@@ -11,8 +11,9 @@ import {
 import { RouteTransition } from "@/components/ui/route-transition";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 // import { ThemeProvider } from "next-themes";
 
 const geistSans = JetBrains_Mono({
