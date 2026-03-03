@@ -6,7 +6,9 @@ import { isJsonRequest, parseJsonSafely } from "@/server/http/request";
 import { jsonError, jsonNoStore } from "@/server/http/response";
 import {
   getProblemStatementCap,
+  getRegistrationsOpen,
   updateProblemStatementCap,
+  updateRegistrationsOpen,
 } from "@/server/problem-statements/cap-settings";
 import { enforceSameOrigin } from "@/server/security/csrf";
 
@@ -17,6 +19,15 @@ const updateCapSchema = z.object({
     .positive("Cap must be a positive integer.")
     .max(10_000, "Cap is too large."),
 });
+
+const updateRegistrationsOpenSchema = z.object({
+  registrationsOpen: z.boolean(),
+});
+
+const updateSettingsSchema = z.union([
+  updateCapSchema.strict(),
+  updateRegistrationsOpenSchema.strict(),
+]);
 
 type AdminAuthResult = {
   response: Response | null;
@@ -47,9 +58,12 @@ export async function GET() {
     return auth.response;
   }
 
-  const cap = await getProblemStatementCap({ useCache: false });
+  const [cap, registrationsOpen] = await Promise.all([
+    getProblemStatementCap({ useCache: false }),
+    getRegistrationsOpen({ useCache: false }),
+  ]);
 
-  return jsonNoStore({ cap }, 200);
+  return jsonNoStore({ cap, registrationsOpen }, 200);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -72,7 +86,7 @@ export async function PATCH(request: NextRequest) {
     return jsonError("Invalid JSON payload.", 400);
   }
 
-  const parsed = updateCapSchema.safeParse(body);
+  const parsed = updateSettingsSchema.safeParse(body);
   if (!parsed.success) {
     return jsonError(
       parsed.error.issues[0]?.message ?? "Invalid payload.",
@@ -80,10 +94,24 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const updated = await updateProblemStatementCap(parsed.data.cap);
+  if ("cap" in parsed.data) {
+    const updated = await updateProblemStatementCap(parsed.data.cap);
+    if (!updated.ok) {
+      return jsonError(updated.error, updated.status);
+    }
+
+    const registrationsOpen = await getRegistrationsOpen({ useCache: false });
+    return jsonNoStore({ cap: updated.cap, registrationsOpen }, 200);
+  }
+
+  const updated = await updateRegistrationsOpen(parsed.data.registrationsOpen);
   if (!updated.ok) {
     return jsonError(updated.error, updated.status);
   }
 
-  return jsonNoStore({ cap: updated.cap }, 200);
+  const cap = await getProblemStatementCap({ useCache: false });
+  return jsonNoStore(
+    { cap, registrationsOpen: updated.registrationsOpen },
+    200,
+  );
 }

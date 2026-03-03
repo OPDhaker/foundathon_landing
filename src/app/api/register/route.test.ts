@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   enforceIpRateLimit: vi.fn(),
   enforceSameOrigin: vi.fn(),
   enforceUserRateLimit: vi.fn(),
+  getRegistrationsOpen: vi.fn(),
   getProblemStatementById: vi.fn(),
   problemStatementCap: vi.fn(),
   getSupabaseCredentials: vi.fn(),
@@ -38,6 +39,11 @@ vi.mock("@/server/security/csrf", () => ({
 vi.mock("@/server/security/rate-limit", () => ({
   enforceIpRateLimit: mocks.enforceIpRateLimit,
   enforceUserRateLimit: mocks.enforceUserRateLimit,
+}));
+
+vi.mock("@/server/problem-statements/cap-settings", () => ({
+  getProblemStatementCap: mocks.problemStatementCap,
+  getRegistrationsOpen: mocks.getRegistrationsOpen,
 }));
 
 vi.mock("@/data/problem-statements", () => ({
@@ -113,6 +119,7 @@ describe("/api/register route", () => {
     mocks.enforceIpRateLimit.mockReset();
     mocks.enforceSameOrigin.mockReset();
     mocks.enforceUserRateLimit.mockReset();
+    mocks.getRegistrationsOpen.mockReset();
     mocks.getProblemStatementById.mockReset();
     mocks.problemStatementCap.mockReset();
     mocks.getSupabaseCredentials.mockReset();
@@ -127,6 +134,7 @@ describe("/api/register route", () => {
     mocks.enforceIpRateLimit.mockResolvedValue(null);
     mocks.enforceSameOrigin.mockReturnValue(null);
     mocks.enforceUserRateLimit.mockResolvedValue(null);
+    mocks.getRegistrationsOpen.mockResolvedValue(true);
     mocks.toTeamSummary.mockReturnValue(summary);
     mocks.withSrmEmailNetIds.mockImplementation((payload) => payload);
     mocks.verifyProblemLockToken.mockReturnValue({
@@ -321,6 +329,35 @@ describe("/api/register route", () => {
 
     expect(res.status).toBe(401);
     expect(body.error).toBe("Unauthorized");
+  });
+
+  it("POST returns 409 when registrations are closed", async () => {
+    mocks.getRegistrationsOpen.mockResolvedValueOnce(false);
+    mocks.createSupabaseClient.mockResolvedValue(
+      makeAuthClient({
+        user: {
+          email: "lead@example.com",
+          id: "user-1",
+        },
+      }),
+    );
+
+    const { POST } = await import("./route");
+    const req = new NextRequest("http://localhost/api/register", {
+      body: JSON.stringify({
+        lockToken: "token-1",
+        problemStatementId: "ps-01",
+        team: teamPayload,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    const res = await POST(req);
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error).toBe("Registrations are currently closed.");
   });
 
   it("POST rejects unknown problem statements", async () => {

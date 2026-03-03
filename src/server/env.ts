@@ -4,6 +4,7 @@ type EnvKey =
   | "FOUNDATHON_NEXT_PUBLIC_SITE_URL"
   | "FOUNDATHON_NODE_ENV"
   | "FOUNDATHON_PROBLEM_LOCK_TOKEN_SECRET"
+  | "FOUNDATHON_RESEND_API_KEY"
   | "FOUNDATHON_STATS_API_KEY"
   | "FOUNDATHON_STATS_EXCLUDED_EMAILS"
   | "FOUNDATHON_STATS_PAGE_KEY"
@@ -62,6 +63,9 @@ export const getSupabaseServiceRoleEnv = (): SupabaseServiceRoleEnv | null => {
 
 export const getFoundathonNodeEnv = () =>
   readOptionalEnv("FOUNDATHON_NODE_ENV");
+
+export const getFoundathonResendApiKey = () =>
+  readRequiredEnv("FOUNDATHON_RESEND_API_KEY");
 
 export const isFoundathonDevelopment = () =>
   getFoundathonNodeEnv() === "development";

@@ -3,6 +3,7 @@ import {
   getAllowedRedirectHosts,
   getFoundathonAdminEmail,
   getFoundathonNodeEnv,
+  getFoundathonResendApiKey,
   getFoundathonSiteUrl,
   getFoundathonStatsApiKey,
   getFoundathonStatsExcludedEmails,
@@ -19,6 +20,7 @@ const ENV_KEYS = [
   "FOUNDATHON_NEXT_PUBLIC_SITE_URL",
   "FOUNDATHON_NODE_ENV",
   "FOUNDATHON_PROBLEM_LOCK_TOKEN_SECRET",
+  "FOUNDATHON_RESEND_API_KEY",
   "FOUNDATHON_STATS_API_KEY",
   "FOUNDATHON_STATS_EXCLUDED_EMAILS",
   "FOUNDATHON_STATS_PAGE_KEY",
@@ -107,6 +109,18 @@ describe("server/env", () => {
     delete process.env.FOUNDATHON_STATS_API_KEY;
 
     expect(getFoundathonStatsApiKey()).toBeNull();
+  });
+
+  it("returns null for missing resend API key", () => {
+    delete process.env.FOUNDATHON_RESEND_API_KEY;
+
+    expect(getFoundathonResendApiKey()).toBeNull();
+  });
+
+  it("returns resend API key when configured", () => {
+    process.env.FOUNDATHON_RESEND_API_KEY = "resend-key";
+
+    expect(getFoundathonResendApiKey()).toBe("resend-key");
   });
 
   it("returns stats API key when configured", () => {

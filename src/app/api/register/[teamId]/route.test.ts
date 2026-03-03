@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   enforceIpRateLimit: vi.fn(),
   enforceSameOrigin: vi.fn(),
   enforceUserRateLimit: vi.fn(),
+  getRegistrationsOpen: vi.fn(),
   getProblemStatementById: vi.fn(),
   problemStatementCap: vi.fn(),
   getSupabaseCredentials: vi.fn(),
@@ -36,6 +37,11 @@ vi.mock("@/server/security/csrf", () => ({
 vi.mock("@/server/security/rate-limit", () => ({
   enforceIpRateLimit: mocks.enforceIpRateLimit,
   enforceUserRateLimit: mocks.enforceUserRateLimit,
+}));
+
+vi.mock("@/server/problem-statements/cap-settings", () => ({
+  getProblemStatementCap: mocks.problemStatementCap,
+  getRegistrationsOpen: mocks.getRegistrationsOpen,
 }));
 
 vi.mock("@/data/problem-statements", () => ({
@@ -148,6 +154,7 @@ describe("/api/register/[teamId] route", () => {
     mocks.enforceIpRateLimit.mockReset();
     mocks.enforceSameOrigin.mockReset();
     mocks.enforceUserRateLimit.mockReset();
+    mocks.getRegistrationsOpen.mockReset();
     mocks.getProblemStatementById.mockReset();
     mocks.problemStatementCap.mockReset();
     mocks.getSupabaseCredentials.mockReset();
@@ -162,6 +169,7 @@ describe("/api/register/[teamId] route", () => {
     mocks.enforceIpRateLimit.mockResolvedValue(null);
     mocks.enforceSameOrigin.mockReturnValue(null);
     mocks.enforceUserRateLimit.mockResolvedValue(null);
+    mocks.getRegistrationsOpen.mockResolvedValue(true);
     mocks.toTeamRecord.mockReturnValue(srmRecord);
     mocks.problemStatementCap.mockReturnValue(10);
     mocks.getProblemStatementById.mockReturnValue({
@@ -229,6 +237,31 @@ describe("/api/register/[teamId] route", () => {
     expect(res.status).toBe(403);
     expect(body.code).toBe("CSRF_FAILED");
     expect(mocks.createSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it("PATCH returns 409 when registrations are closed", async () => {
+    mocks.getRegistrationsOpen.mockResolvedValueOnce(false);
+    mocks.createSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { email: "lead@example.com", id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn(),
+    });
+
+    const { PATCH } = await import("./route");
+    const req = new NextRequest(`http://localhost/api/register/${teamId}`, {
+      body: JSON.stringify(srmRecord),
+      headers: { "content-type": "application/json" },
+      method: "PATCH",
+    });
+    const res = await PATCH(req, makeParams(teamId));
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error).toBe("Registrations are currently closed.");
   });
 
   it("DELETE returns 429 when IP rate limit is exceeded", async () => {

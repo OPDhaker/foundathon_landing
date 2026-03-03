@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   enforceIpRateLimit: vi.fn(),
   enforceSameOrigin: vi.fn(),
   enforceUserRateLimit: vi.fn(),
+  getRegistrationsOpen: vi.fn(),
   getProblemStatementById: vi.fn(),
   problemStatementCap: vi.fn(),
   getSupabaseCredentials: vi.fn(),
@@ -32,6 +33,11 @@ vi.mock("@/server/security/rate-limit", () => ({
   enforceUserRateLimit: mocks.enforceUserRateLimit,
 }));
 
+vi.mock("@/server/problem-statements/cap-settings", () => ({
+  getProblemStatementCap: mocks.problemStatementCap,
+  getRegistrationsOpen: mocks.getRegistrationsOpen,
+}));
+
 vi.mock("@/data/problem-statements", () => ({
   getProblemStatementById: mocks.getProblemStatementById,
   PROBLEM_STATEMENT_CAP: mocks.problemStatementCap(),
@@ -45,6 +51,7 @@ describe("/api/problem-statements/lock POST", () => {
     mocks.enforceIpRateLimit.mockReset();
     mocks.enforceSameOrigin.mockReset();
     mocks.enforceUserRateLimit.mockReset();
+    mocks.getRegistrationsOpen.mockReset();
     mocks.getProblemStatementById.mockReset();
     mocks.problemStatementCap.mockReset();
     mocks.getSupabaseCredentials.mockReset();
@@ -57,6 +64,7 @@ describe("/api/problem-statements/lock POST", () => {
     mocks.enforceIpRateLimit.mockResolvedValue(null);
     mocks.enforceSameOrigin.mockReturnValue(null);
     mocks.enforceUserRateLimit.mockResolvedValue(null);
+    mocks.getRegistrationsOpen.mockResolvedValue(true);
 
     mocks.createProblemLockToken.mockReturnValue({
       expiresAt: "2026-02-20T00:00:00.000Z",
@@ -301,5 +309,34 @@ describe("/api/problem-statements/lock POST", () => {
     expect(response.status).toBe(429);
     expect(body.code).toBe("RATE_LIMITED");
     expect(mocks.createSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when registrations are closed", async () => {
+    mocks.getRegistrationsOpen.mockResolvedValueOnce(false);
+    mocks.createSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn(),
+    });
+
+    const { POST } = await import("./route");
+    const request = new NextRequest(
+      "http://localhost/api/problem-statements/lock",
+      {
+        body: JSON.stringify({ problemStatementId: "ps-01" }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.error).toBe("Registrations are currently closed.");
   });
 });

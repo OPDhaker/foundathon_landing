@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { UUID_PATTERN } from "@/lib/register-api";
 import { getRouteAuthContext } from "@/server/auth/context";
 import { jsonError, jsonNoStore } from "@/server/http/response";
+import { getRegistrationsOpen } from "@/server/problem-statements/cap-settings";
 import { submitTeamPresentation } from "@/server/registration/service";
 import { enforceSameOrigin } from "@/server/security/csrf";
 import {
@@ -33,6 +34,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   const context = await getRouteAuthContext();
   if (!context.ok) {
     return context.response;
+  }
+
+  const registrationsOpen = await getRegistrationsOpen();
+  if (!registrationsOpen) {
+    return jsonError("Registrations are currently closed.", 409);
   }
 
   const userRateLimitResponse = await enforceUserRateLimit({

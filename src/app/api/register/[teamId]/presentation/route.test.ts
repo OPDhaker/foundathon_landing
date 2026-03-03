@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   enforceIpRateLimit: vi.fn(),
   enforceSameOrigin: vi.fn(),
   enforceUserRateLimit: vi.fn(),
+  getRegistrationsOpen: vi.fn(),
   getRouteAuthContext: vi.fn(),
   submitTeamPresentation: vi.fn(),
 }));
@@ -21,6 +22,10 @@ vi.mock("@/server/security/csrf", () => ({
 vi.mock("@/server/security/rate-limit", () => ({
   enforceIpRateLimit: mocks.enforceIpRateLimit,
   enforceUserRateLimit: mocks.enforceUserRateLimit,
+}));
+
+vi.mock("@/server/problem-statements/cap-settings", () => ({
+  getRegistrationsOpen: mocks.getRegistrationsOpen,
 }));
 
 vi.mock("@/server/registration/service", () => ({
@@ -95,12 +100,14 @@ describe("/api/register/[teamId]/presentation route", () => {
     mocks.enforceIpRateLimit.mockReset();
     mocks.enforceSameOrigin.mockReset();
     mocks.enforceUserRateLimit.mockReset();
+    mocks.getRegistrationsOpen.mockReset();
     mocks.getRouteAuthContext.mockReset();
     mocks.submitTeamPresentation.mockReset();
 
     mocks.enforceIpRateLimit.mockResolvedValue(null);
     mocks.enforceSameOrigin.mockReturnValue(null);
     mocks.enforceUserRateLimit.mockResolvedValue(null);
+    mocks.getRegistrationsOpen.mockResolvedValue(true);
     mocks.getRouteAuthContext.mockResolvedValue({
       ok: true,
       supabase: supabaseClient as never,
@@ -180,6 +187,20 @@ describe("/api/register/[teamId]/presentation route", () => {
     expect(response.status).toBe(400);
     expect(body.error).toBe("Team id is invalid.");
     expect(mocks.getRouteAuthContext).not.toHaveBeenCalled();
+    expect(mocks.submitTeamPresentation).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when registrations are closed", async () => {
+    mocks.getRegistrationsOpen.mockResolvedValueOnce(false);
+    const formData = new FormData();
+    formData.set("file", validFile());
+
+    const { POST } = await import("./route");
+    const response = await POST(buildRequest(formData), makeParams(teamId));
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.error).toBe("Registrations are currently closed.");
     expect(mocks.submitTeamPresentation).not.toHaveBeenCalled();
   });
 

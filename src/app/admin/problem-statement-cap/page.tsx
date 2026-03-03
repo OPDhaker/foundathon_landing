@@ -2,7 +2,10 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { isBlockedLoginEmail } from "@/server/auth/email-policy";
 import { isFoundathonAdminEmail } from "@/server/env";
-import { getProblemStatementCap } from "@/server/problem-statements/cap-settings";
+import {
+  getProblemStatementCap,
+  getRegistrationsOpen,
+} from "@/server/problem-statements/cap-settings";
 import { createClient } from "@/utils/supabase/server";
 import AdminProblemStatementCapClient from "./problem-statement-cap-client";
 
@@ -32,12 +35,16 @@ export default async function AdminProblemStatementCapPage() {
     notFound();
   }
 
-  const initialCap = await getProblemStatementCap({ useCache: false });
+  const [initialCap, initialRegistrationsOpen] = await Promise.all([
+    getProblemStatementCap({ useCache: false }),
+    getRegistrationsOpen({ useCache: false }),
+  ]);
 
   return (
     <AdminProblemStatementCapClient
       adminEmail={user.email ?? ""}
       initialCap={initialCap}
+      initialRegistrationsOpen={initialRegistrationsOpen}
     />
   );
 }

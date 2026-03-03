@@ -3,6 +3,7 @@ import { FnButton } from "@/components/ui/fn-button";
 import { getAuthUiState } from "@/lib/auth-ui-state";
 import { springOptions } from "@/lib/constants";
 import { MOTION_TRANSITIONS, MOTION_VARIANTS } from "@/lib/motion-system";
+import { getRegistrationsOpen } from "@/server/problem-statements/cap-settings";
 import { InView } from "../ui/in-view";
 import { Magnetic } from "../ui/magnetic";
 import HeroRegisterButton from "./HeroRegisterButton";
@@ -22,7 +23,10 @@ const HERO_TRANSITION_BASE = MOTION_TRANSITIONS.base;
 const HERO_TRANSITION_SLOW = MOTION_TRANSITIONS.slow;
 
 const Hero = async () => {
-  const { isSignedIn, teamId } = await getAuthUiState();
+  const [{ isSignedIn, teamId }, registrationsOpen] = await Promise.all([
+    getAuthUiState(),
+    getRegistrationsOpen(),
+  ]);
   return (
     <section
       id="hero"
@@ -122,6 +126,7 @@ const Hero = async () => {
               <HeroRegisterButton
                 initialIsSignedIn={isSignedIn}
                 initialTeamId={teamId}
+                registrationsOpen={registrationsOpen}
                 label={content.primaryButtonText}
               />
               <Magnetic

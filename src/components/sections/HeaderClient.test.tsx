@@ -58,7 +58,11 @@ describe("HeaderClient motion controls", () => {
 
     render(
       <MotionPreferencesProvider>
-        <HeaderClient initialIsSignedIn={false} initialTeamId={null} />
+        <HeaderClient
+          initialIsSignedIn={false}
+          initialTeamId={null}
+          registrationsOpen={true}
+        />
       </MotionPreferencesProvider>,
     );
 
@@ -77,5 +81,25 @@ describe("HeaderClient motion controls", () => {
     expect(
       screen.getByRole("button", { name: /toggle reduced motion/i }),
     ).toBeInTheDocument();
+  });
+
+  it("disables register actions when registrations are closed", () => {
+    render(
+      <MotionPreferencesProvider>
+        <HeaderClient
+          initialIsSignedIn={false}
+          initialTeamId={null}
+          registrationsOpen={false}
+        />
+      </MotionPreferencesProvider>,
+    );
+
+    const closedButtons = screen.getAllByRole("button", {
+      name: /registrations closed/i,
+    });
+    expect(closedButtons.length).toBeGreaterThan(0);
+    for (const button of closedButtons) {
+      expect(button).toBeDisabled();
+    }
   });
 });

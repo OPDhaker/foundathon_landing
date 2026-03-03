@@ -4,8 +4,11 @@ import { getServiceRoleSupabaseClient } from "@/server/supabase/service-role-cli
 
 const SETTINGS_TABLE = "foundathon_event_settings";
 const CAP_CACHE_TTL_MS = 15_000;
+const REGISTRATIONS_OPEN_CACHE_TTL_MS = 15_000;
 
 let capCache: { expiresAtMs: number; value: number } | null = null;
+let registrationsOpenCache: { expiresAtMs: number; value: boolean } | null =
+  null;
 
 const toPositiveInteger = (value: unknown) => {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) {
@@ -23,6 +26,7 @@ const toPositiveInteger = (value: unknown) => {
 };
 
 const getFallbackCap = () => PROBLEM_STATEMENT_CAP;
+const getFallbackRegistrationsOpen = () => true;
 
 const readProblemStatementCapFromSettings = async () => {
   const supabase = getServiceRoleSupabaseClient();
@@ -49,8 +53,42 @@ const readProblemStatementCapFromSettings = async () => {
   }
 };
 
+const toBoolean = (value: unknown) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return null;
+};
+
+const readRegistrationsOpenFromSettings = async () => {
+  const supabase = getServiceRoleSupabaseClient();
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(SETTINGS_TABLE)
+      .select("registrations_open")
+      .eq("event_id", EVENT_ID)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return toBoolean(
+      (data as { registrations_open?: unknown }).registrations_open,
+    );
+  } catch {
+    return null;
+  }
+};
+
 export const clearProblemStatementCapCacheForTests = () => {
   capCache = null;
+  registrationsOpenCache = null;
 };
 
 type GetProblemStatementCapOptions = {
@@ -76,6 +114,35 @@ export const getProblemStatementCap = async ({
   };
 
   return cap;
+};
+
+type GetRegistrationsOpenOptions = {
+  useCache?: boolean;
+};
+
+export const getRegistrationsOpen = async ({
+  useCache = true,
+}: GetRegistrationsOpenOptions = {}) => {
+  const nowMs = Date.now();
+  if (
+    useCache &&
+    registrationsOpenCache &&
+    registrationsOpenCache.expiresAtMs > nowMs
+  ) {
+    return registrationsOpenCache.value;
+  }
+
+  const registrationsOpen = await readRegistrationsOpenFromSettings();
+  if (registrationsOpen === null) {
+    return getFallbackRegistrationsOpen();
+  }
+
+  registrationsOpenCache = {
+    expiresAtMs: nowMs + REGISTRATIONS_OPEN_CACHE_TTL_MS,
+    value: registrationsOpen,
+  };
+
+  return registrationsOpen;
 };
 
 type UpdateProblemStatementCapResult =
@@ -141,5 +208,72 @@ export const updateProblemStatementCap = async (
   return {
     cap: normalizedCap,
     ok: true,
+  };
+};
+
+type UpdateRegistrationsOpenResult =
+  | { ok: true; registrationsOpen: boolean }
+  | { error: string; ok: false; status: number };
+
+export const updateRegistrationsOpen = async (
+  registrationsOpen: boolean,
+): Promise<UpdateRegistrationsOpenResult> => {
+  if (typeof registrationsOpen !== "boolean") {
+    return {
+      error: "Registrations open flag must be a boolean.",
+      ok: false,
+      status: 400,
+    };
+  }
+
+  const supabase = getServiceRoleSupabaseClient();
+  if (!supabase) {
+    return {
+      error: "Supabase service role client is not configured.",
+      ok: false,
+      status: 500,
+    };
+  }
+
+  const cap = await getProblemStatementCap({ useCache: false });
+
+  let error: { message?: string } | null = null;
+  try {
+    ({ error } = await supabase.from(SETTINGS_TABLE).upsert(
+      {
+        event_id: EVENT_ID,
+        problem_statement_cap: cap,
+        registrations_open: registrationsOpen,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "event_id" },
+    ));
+  } catch (caughtError) {
+    return {
+      error:
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Failed to update registrations open setting.",
+      ok: false,
+      status: 500,
+    };
+  }
+
+  if (error) {
+    return {
+      error: error.message || "Failed to update registrations open setting.",
+      ok: false,
+      status: 500,
+    };
+  }
+
+  registrationsOpenCache = {
+    expiresAtMs: Date.now() + REGISTRATIONS_OPEN_CACHE_TTL_MS,
+    value: registrationsOpen,
+  };
+
+  return {
+    ok: true,
+    registrationsOpen,
   };
 };

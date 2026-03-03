@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   enforceSameOrigin: vi.fn(),
   getProblemStatementCap: vi.fn(),
+  getRegistrationsOpen: vi.fn(),
   getRouteAuthContext: vi.fn(),
   isFoundathonAdminEmail: vi.fn(),
+  updateRegistrationsOpen: vi.fn(),
   updateProblemStatementCap: vi.fn(),
 }));
 
@@ -23,6 +25,8 @@ vi.mock("@/server/env", () => ({
 
 vi.mock("@/server/problem-statements/cap-settings", () => ({
   getProblemStatementCap: mocks.getProblemStatementCap,
+  getRegistrationsOpen: mocks.getRegistrationsOpen,
+  updateRegistrationsOpen: mocks.updateRegistrationsOpen,
   updateProblemStatementCap: mocks.updateProblemStatementCap,
 }));
 
@@ -32,17 +36,24 @@ describe("/api/admin/problem-statement-cap", () => {
 
     mocks.enforceSameOrigin.mockReset();
     mocks.getProblemStatementCap.mockReset();
+    mocks.getRegistrationsOpen.mockReset();
     mocks.getRouteAuthContext.mockReset();
     mocks.isFoundathonAdminEmail.mockReset();
+    mocks.updateRegistrationsOpen.mockReset();
     mocks.updateProblemStatementCap.mockReset();
 
     mocks.enforceSameOrigin.mockReturnValue(null);
     mocks.getProblemStatementCap.mockResolvedValue(15);
+    mocks.getRegistrationsOpen.mockResolvedValue(true);
     mocks.isFoundathonAdminEmail.mockReturnValue(true);
     mocks.getRouteAuthContext.mockResolvedValue({
       ok: true,
       supabase: {},
       user: { email: "admin@example.com", id: "user-1" },
+    });
+    mocks.updateRegistrationsOpen.mockResolvedValue({
+      ok: true,
+      registrationsOpen: false,
     });
     mocks.updateProblemStatementCap.mockResolvedValue({
       cap: 20,
@@ -76,13 +87,14 @@ describe("/api/admin/problem-statement-cap", () => {
     expect(body.error).toBe("Forbidden");
   });
 
-  it("GET returns current cap for admin users", async () => {
+  it("GET returns current settings for admin users", async () => {
     const { GET } = await import("./route");
     const response = await GET();
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.cap).toBe(15);
+    expect(body.registrationsOpen).toBe(true);
   });
 
   it("PATCH rejects non-json payloads", async () => {
@@ -138,5 +150,26 @@ describe("/api/admin/problem-statement-cap", () => {
     expect(mocks.updateProblemStatementCap).toHaveBeenCalledWith(25);
     expect(response.status).toBe(200);
     expect(body.cap).toBe(20);
+    expect(body.registrationsOpen).toBe(true);
+  });
+
+  it("PATCH updates registration status for admin users", async () => {
+    const { PATCH } = await import("./route");
+    const request = new NextRequest(
+      "http://localhost/api/admin/problem-statement-cap",
+      {
+        body: JSON.stringify({ registrationsOpen: false }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    const response = await PATCH(request);
+    const body = await response.json();
+
+    expect(mocks.updateRegistrationsOpen).toHaveBeenCalledWith(false);
+    expect(response.status).toBe(200);
+    expect(body.cap).toBe(15);
+    expect(body.registrationsOpen).toBe(false);
   });
 });

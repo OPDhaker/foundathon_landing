@@ -5,6 +5,7 @@ import { teamSubmissionSchema } from "@/lib/register-schema";
 import { getRouteAuthContext } from "@/server/auth/context";
 import { isJsonRequest, parseJsonSafely } from "@/server/http/request";
 import { jsonError, jsonNoStore } from "@/server/http/response";
+import { getRegistrationsOpen } from "@/server/problem-statements/cap-settings";
 import {
   createTeam,
   deleteTeamByQueryId,
@@ -79,6 +80,11 @@ export async function POST(request: NextRequest) {
     return context.response;
   }
 
+  const registrationsOpen = await getRegistrationsOpen();
+  if (!registrationsOpen) {
+    return jsonError("Registrations are currently closed.", 409);
+  }
+
   const userRateLimitResponse = await enforceUserRateLimit({
     policy: "register_create_user",
     request,
@@ -128,6 +134,11 @@ export async function DELETE(request: NextRequest) {
   const context = await getRouteAuthContext();
   if (!context.ok) {
     return context.response;
+  }
+
+  const registrationsOpen = await getRegistrationsOpen();
+  if (!registrationsOpen) {
+    return jsonError("Registrations are currently closed.", 409);
   }
 
   const userRateLimitResponse = await enforceUserRateLimit({

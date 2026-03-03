@@ -18,6 +18,7 @@ import { ConfettiButton } from "../ui/confetti-button";
 type HeaderClientProps = {
   initialIsSignedIn: boolean;
   initialTeamId: string | null;
+  registrationsOpen: boolean;
 };
 
 const navLinks = [
@@ -29,6 +30,7 @@ const navLinks = [
 const HeaderClient = ({
   initialIsSignedIn,
   initialTeamId,
+  registrationsOpen,
 }: HeaderClientProps) => {
   const pathname = usePathname();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -218,13 +220,13 @@ const HeaderClient = ({
                     Dashboard
                   </Link>
                 </FnButton>
-              ) : isSignedIn ? (
+              ) : registrationsOpen && isSignedIn ? (
                 <FnButton asChild tone="blue">
                   <Link href="/register" prefetch={true}>
                     Register Team
                   </Link>
                 </FnButton>
-              ) : (
+              ) : registrationsOpen ? (
                 <FnButton
                   type="button"
                   tone="blue"
@@ -233,6 +235,10 @@ const HeaderClient = ({
                   }}
                 >
                   Register Team
+                </FnButton>
+              ) : (
+                <FnButton type="button" tone="blue" disabled>
+                  Registrations Closed
                 </FnButton>
               )}
               {isSignedIn ? (
@@ -315,7 +321,7 @@ const HeaderClient = ({
                   Dashboard
                 </Link>
               </FnButton>
-            ) : isSignedIn ? (
+            ) : registrationsOpen && isSignedIn ? (
               <FnButton asChild tone="blue" className="w-full">
                 <Link
                   href="/register"
@@ -325,7 +331,7 @@ const HeaderClient = ({
                   Register Team
                 </Link>
               </FnButton>
-            ) : (
+            ) : registrationsOpen ? (
               <FnButton
                 type="button"
                 tone="blue"
@@ -336,6 +342,10 @@ const HeaderClient = ({
                 }}
               >
                 Register Team
+              </FnButton>
+            ) : (
+              <FnButton type="button" tone="blue" className="w-full" disabled>
+                Registrations Closed
               </FnButton>
             )}
             {isSignedIn ? (

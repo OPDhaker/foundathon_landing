@@ -11,12 +11,14 @@ import { Magnetic } from "../ui/magnetic";
 type HeroRegisterButtonProps = {
   initialIsSignedIn: boolean;
   initialTeamId: string | null;
+  registrationsOpen: boolean;
   label: string;
 };
 
 const HeroRegisterButton = ({
   initialIsSignedIn,
   initialTeamId,
+  registrationsOpen,
   label,
 }: HeroRegisterButtonProps) => {
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
@@ -51,14 +53,14 @@ const HeroRegisterButton = ({
             </Link>
           </FnButton>
         </Magnetic>
-      ) : initialIsSignedIn ? (
+      ) : registrationsOpen && initialIsSignedIn ? (
         <FnButton asChild tone="red" size="lg">
           <Link href="/register" prefetch={true}>
             {label}
             <ArrowRight strokeWidth={3} />
           </Link>
         </FnButton>
-      ) : (
+      ) : registrationsOpen ? (
         <Magnetic
           intensity={0.1}
           springOptions={springOptions}
@@ -84,6 +86,10 @@ const HeroRegisterButton = ({
             <ArrowRight strokeWidth={3} />
           </FnButton>
         </Magnetic>
+      ) : (
+        <FnButton type="button" tone="red" size="lg" disabled>
+          Registrations Closed
+        </FnButton>
       )}
 
       <SignInRequiredModal
