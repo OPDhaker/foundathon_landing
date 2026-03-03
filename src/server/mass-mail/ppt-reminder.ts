@@ -7,6 +7,7 @@ import { getServiceRoleSupabaseClient } from "@/server/supabase/service-role-cli
 const REGISTRATION_TABLE = "eventsregistrations";
 const DEFAULT_SITE_URL = "https://foundathon.thefoundersclub.tech";
 const DEFAULT_FROM_EMAIL = "Foundathon 3.0 <no-reply@thefoundersclub.tech>";
+const EMAIL_SEND_INTERVAL_MS = 2_000;
 const INVALID_EMAIL_ERROR = "Invalid email address.";
 
 type RegistrationRow = {
@@ -89,7 +90,7 @@ const toProblemStatementTitle = (details: Record<string, unknown>) => {
 const hasSubmittedPresentation = (details: Record<string, unknown>) =>
   Boolean(
     toTrimmedString(details.presentationUploadedAt) &&
-      toTrimmedString(details.presentationPublicUrl),
+    toTrimmedString(details.presentationPublicUrl),
   );
 
 export const toPendingPptRecipients = (
@@ -321,6 +322,11 @@ const fail = (error: string, status: number): SendMissingPptReminderResult => ({
   status,
 });
 
+const wait = (durationMs: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
+
 export const sendMissingPptReminderMassMail = async ({
   adminEmail,
   mode,
@@ -433,8 +439,15 @@ export const sendMissingPptReminderMassMail = async ({
   const siteUrl = getFoundathonSiteUrl() ?? DEFAULT_SITE_URL;
   const from = getMassMailFromEmail();
 
-  const results = await Promise.allSettled(
-    recipients.map(async (recipient) => {
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const [index, recipient] of recipients.entries()) {
+    if (index > 0) {
+      await wait(EMAIL_SEND_INTERVAL_MS);
+    }
+
+    try {
       const { html, subject, text } = getEmailContent({
         problemStatementTitle: recipient.problemStatementTitle,
         siteUrl,
@@ -451,13 +464,12 @@ export const sendMissingPptReminderMassMail = async ({
       if (error) {
         throw new Error(error.message || "Failed to send reminder email.");
       }
-    }),
-  );
 
-  const sentCount = results.filter(
-    (result) => result.status === "fulfilled",
-  ).length;
-  const failedCount = results.length - sentCount;
+      sentCount += 1;
+    } catch {
+      failedCount += 1;
+    }
+  }
 
   return {
     failedCount,
