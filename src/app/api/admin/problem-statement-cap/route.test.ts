@@ -3,10 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   enforceSameOrigin: vi.fn(),
+  getManagedReviewAdminEmails: vi.fn(),
   getProblemStatementCap: vi.fn(),
   getRegistrationsOpen: vi.fn(),
   getRouteAuthContext: vi.fn(),
   isFoundathonAdminEmail: vi.fn(),
+  isFoundathonSuperAdminEmail: vi.fn(),
+  updateManagedReviewAdminEmails: vi.fn(),
   updateRegistrationsOpen: vi.fn(),
   updateProblemStatementCap: vi.fn(),
 }));
@@ -21,11 +24,14 @@ vi.mock("@/server/auth/context", () => ({
 
 vi.mock("@/server/env", () => ({
   isFoundathonAdminEmail: mocks.isFoundathonAdminEmail,
+  isFoundathonSuperAdminEmail: mocks.isFoundathonSuperAdminEmail,
 }));
 
 vi.mock("@/server/problem-statements/cap-settings", () => ({
+  getManagedReviewAdminEmails: mocks.getManagedReviewAdminEmails,
   getProblemStatementCap: mocks.getProblemStatementCap,
   getRegistrationsOpen: mocks.getRegistrationsOpen,
+  updateManagedReviewAdminEmails: mocks.updateManagedReviewAdminEmails,
   updateRegistrationsOpen: mocks.updateRegistrationsOpen,
   updateProblemStatementCap: mocks.updateProblemStatementCap,
 }));
@@ -35,21 +41,32 @@ describe("/api/admin/problem-statement-cap", () => {
     vi.resetModules();
 
     mocks.enforceSameOrigin.mockReset();
+    mocks.getManagedReviewAdminEmails.mockReset();
     mocks.getProblemStatementCap.mockReset();
     mocks.getRegistrationsOpen.mockReset();
     mocks.getRouteAuthContext.mockReset();
     mocks.isFoundathonAdminEmail.mockReset();
+    mocks.isFoundathonSuperAdminEmail.mockReset();
+    mocks.updateManagedReviewAdminEmails.mockReset();
     mocks.updateRegistrationsOpen.mockReset();
     mocks.updateProblemStatementCap.mockReset();
 
     mocks.enforceSameOrigin.mockReturnValue(null);
+    mocks.getManagedReviewAdminEmails.mockResolvedValue([
+      "reviewer@example.com",
+    ]);
     mocks.getProblemStatementCap.mockResolvedValue(15);
     mocks.getRegistrationsOpen.mockResolvedValue(true);
     mocks.isFoundathonAdminEmail.mockReturnValue(true);
+    mocks.isFoundathonSuperAdminEmail.mockReturnValue(false);
     mocks.getRouteAuthContext.mockResolvedValue({
       ok: true,
       supabase: {},
       user: { email: "admin@example.com", id: "user-1" },
+    });
+    mocks.updateManagedReviewAdminEmails.mockResolvedValue({
+      ok: true,
+      reviewAdminEmails: ["reviewer@example.com", "new@example.com"],
     });
     mocks.updateRegistrationsOpen.mockResolvedValue({
       ok: true,
@@ -95,6 +112,7 @@ describe("/api/admin/problem-statement-cap", () => {
     expect(response.status).toBe(200);
     expect(body.cap).toBe(15);
     expect(body.registrationsOpen).toBe(true);
+    expect(body.reviewAdminEmails).toEqual(["reviewer@example.com"]);
   });
 
   it("PATCH rejects non-json payloads", async () => {
@@ -151,6 +169,7 @@ describe("/api/admin/problem-statement-cap", () => {
     expect(response.status).toBe(200);
     expect(body.cap).toBe(20);
     expect(body.registrationsOpen).toBe(true);
+    expect(body.reviewAdminEmails).toEqual(["reviewer@example.com"]);
   });
 
   it("PATCH updates registration status for admin users", async () => {
@@ -171,5 +190,79 @@ describe("/api/admin/problem-statement-cap", () => {
     expect(response.status).toBe(200);
     expect(body.cap).toBe(15);
     expect(body.registrationsOpen).toBe(false);
+    expect(body.reviewAdminEmails).toEqual(["reviewer@example.com"]);
+  });
+
+  it("PATCH blocks review admin email updates for non-super admin", async () => {
+    const { PATCH } = await import("./route");
+    const request = new NextRequest(
+      "http://localhost/api/admin/problem-statement-cap",
+      {
+        body: JSON.stringify({ reviewAdminEmailToAdd: "new@example.com" }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    const response = await PATCH(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Forbidden");
+    expect(mocks.updateManagedReviewAdminEmails).not.toHaveBeenCalled();
+  });
+
+  it("PATCH adds review admin email for super admin", async () => {
+    mocks.isFoundathonSuperAdminEmail.mockReturnValueOnce(true);
+
+    const { PATCH } = await import("./route");
+    const request = new NextRequest(
+      "http://localhost/api/admin/problem-statement-cap",
+      {
+        body: JSON.stringify({ reviewAdminEmailToAdd: "new@example.com" }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    const response = await PATCH(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateManagedReviewAdminEmails).toHaveBeenCalledWith([
+      "reviewer@example.com",
+      "new@example.com",
+    ]);
+    expect(body.reviewAdminEmails).toEqual([
+      "reviewer@example.com",
+      "new@example.com",
+    ]);
+  });
+
+  it("PATCH removes review admin email for super admin", async () => {
+    mocks.isFoundathonSuperAdminEmail.mockReturnValueOnce(true);
+    mocks.updateManagedReviewAdminEmails.mockResolvedValueOnce({
+      ok: true,
+      reviewAdminEmails: [],
+    });
+
+    const { PATCH } = await import("./route");
+    const request = new NextRequest(
+      "http://localhost/api/admin/problem-statement-cap",
+      {
+        body: JSON.stringify({
+          reviewAdminEmailToRemove: "reviewer@example.com",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    const response = await PATCH(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateManagedReviewAdminEmails).toHaveBeenCalledWith([]);
+    expect(body.reviewAdminEmails).toEqual([]);
   });
 });

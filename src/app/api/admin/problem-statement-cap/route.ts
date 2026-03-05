@@ -1,12 +1,17 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { getRouteAuthContext } from "@/server/auth/context";
-import { isFoundathonAdminEmail } from "@/server/env";
+import {
+  isFoundathonAdminEmail,
+  isFoundathonSuperAdminEmail,
+} from "@/server/env";
 import { isJsonRequest, parseJsonSafely } from "@/server/http/request";
 import { jsonError, jsonNoStore } from "@/server/http/response";
 import {
+  getManagedReviewAdminEmails,
   getProblemStatementCap,
   getRegistrationsOpen,
+  updateManagedReviewAdminEmails,
   updateProblemStatementCap,
   updateRegistrationsOpen,
 } from "@/server/problem-statements/cap-settings";
@@ -24,18 +29,38 @@ const updateRegistrationsOpenSchema = z.object({
   registrationsOpen: z.boolean(),
 });
 
+const updateReviewAdminAddSchema = z.object({
+  reviewAdminEmailToAdd: z
+    .string()
+    .trim()
+    .email("Review admin email is invalid."),
+});
+
+const updateReviewAdminRemoveSchema = z.object({
+  reviewAdminEmailToRemove: z
+    .string()
+    .trim()
+    .email("Review admin email is invalid."),
+});
+
 const updateSettingsSchema = z.union([
   updateCapSchema.strict(),
   updateRegistrationsOpenSchema.strict(),
+  updateReviewAdminAddSchema.strict(),
+  updateReviewAdminRemoveSchema.strict(),
 ]);
 
 type AdminAuthResult = {
+  userEmail: string | null;
   response: Response | null;
 };
+
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 const getAdminAuthErrorResponse = async () => {
   const result: AdminAuthResult = {
     response: null,
+    userEmail: null,
   };
 
   const context = await getRouteAuthContext();
@@ -49,6 +74,7 @@ const getAdminAuthErrorResponse = async () => {
     return result;
   }
 
+  result.userEmail = context.user.email ?? null;
   return result;
 };
 
@@ -58,12 +84,13 @@ export async function GET() {
     return auth.response;
   }
 
-  const [cap, registrationsOpen] = await Promise.all([
+  const [cap, registrationsOpen, reviewAdminEmails] = await Promise.all([
     getProblemStatementCap({ useCache: false }),
     getRegistrationsOpen({ useCache: false }),
+    getManagedReviewAdminEmails({ useCache: false }),
   ]);
 
-  return jsonNoStore({ cap, registrationsOpen }, 200);
+  return jsonNoStore({ cap, registrationsOpen, reviewAdminEmails }, 200);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -95,23 +122,82 @@ export async function PATCH(request: NextRequest) {
   }
 
   if ("cap" in parsed.data) {
-    const updated = await updateProblemStatementCap(parsed.data.cap);
-    if (!updated.ok) {
-      return jsonError(updated.error, updated.status);
+    const capUpdate = await updateProblemStatementCap(parsed.data.cap);
+    if (!capUpdate.ok) {
+      return jsonError(capUpdate.error, capUpdate.status);
     }
 
-    const registrationsOpen = await getRegistrationsOpen({ useCache: false });
-    return jsonNoStore({ cap: updated.cap, registrationsOpen }, 200);
+    const [registrationsOpen, reviewAdminEmails] = await Promise.all([
+      getRegistrationsOpen({ useCache: false }),
+      getManagedReviewAdminEmails({ useCache: false }),
+    ]);
+
+    return jsonNoStore(
+      { cap: capUpdate.cap, registrationsOpen, reviewAdminEmails },
+      200,
+    );
   }
 
-  const updated = await updateRegistrationsOpen(parsed.data.registrationsOpen);
-  if (!updated.ok) {
-    return jsonError(updated.error, updated.status);
+  if ("registrationsOpen" in parsed.data) {
+    const registrationsOpenUpdate = await updateRegistrationsOpen(
+      parsed.data.registrationsOpen,
+    );
+    if (!registrationsOpenUpdate.ok) {
+      return jsonError(
+        registrationsOpenUpdate.error,
+        registrationsOpenUpdate.status,
+      );
+    }
+
+    const [cap, reviewAdminEmails] = await Promise.all([
+      getProblemStatementCap({ useCache: false }),
+      getManagedReviewAdminEmails({ useCache: false }),
+    ]);
+
+    return jsonNoStore(
+      {
+        cap,
+        registrationsOpen: registrationsOpenUpdate.registrationsOpen,
+        reviewAdminEmails,
+      },
+      200,
+    );
   }
 
-  const cap = await getProblemStatementCap({ useCache: false });
+  if (!isFoundathonSuperAdminEmail(auth.userEmail)) {
+    return jsonError("Forbidden", 403);
+  }
+
+  const currentReviewAdminEmails = await getManagedReviewAdminEmails({
+    useCache: false,
+  });
+  const requestedEmail =
+    "reviewAdminEmailToAdd" in parsed.data
+      ? normalizeEmail(parsed.data.reviewAdminEmailToAdd)
+      : normalizeEmail(parsed.data.reviewAdminEmailToRemove);
+  const nextReviewAdminEmails =
+    "reviewAdminEmailToAdd" in parsed.data
+      ? [...new Set([...currentReviewAdminEmails, requestedEmail])]
+      : currentReviewAdminEmails.filter((email) => email !== requestedEmail);
+
+  const reviewAdminUpdate = await updateManagedReviewAdminEmails(
+    nextReviewAdminEmails,
+  );
+  if (!reviewAdminUpdate.ok) {
+    return jsonError(reviewAdminUpdate.error, reviewAdminUpdate.status);
+  }
+
+  const [cap, registrationsOpen] = await Promise.all([
+    getProblemStatementCap({ useCache: false }),
+    getRegistrationsOpen({ useCache: false }),
+  ]);
+
   return jsonNoStore(
-    { cap, registrationsOpen: updated.registrationsOpen },
+    {
+      cap,
+      registrationsOpen,
+      reviewAdminEmails: reviewAdminUpdate.reviewAdminEmails,
+    },
     200,
   );
 }

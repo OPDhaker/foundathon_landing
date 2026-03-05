@@ -73,18 +73,51 @@ export const isFoundathonDevelopment = () =>
 export const getFoundathonSiteUrl = () =>
   readOptionalEnv("FOUNDATHON_NEXT_PUBLIC_SITE_URL");
 
-export const getFoundathonAdminEmail = () => {
+const FOUNDATHON_SUPER_ADMIN_EMAIL = "opdhaker2007@gmail.com";
+
+const normalizeEmail = (email: string | null | undefined) =>
+  typeof email === "string" ? email.trim().toLowerCase() : "";
+
+export const getFoundathonSuperAdminEmail = () => FOUNDATHON_SUPER_ADMIN_EMAIL;
+
+export const isFoundathonSuperAdminEmail = (email: string | null | undefined) =>
+  normalizeEmail(email) === FOUNDATHON_SUPER_ADMIN_EMAIL;
+
+export const getFoundathonAdminEmails = () => {
   const value = readRequiredEnv("FOUNDATHON_ADMIN_EMAIL");
-  return value ? value.trim().toLowerCase() : null;
+  if (!value) {
+    return [];
+  }
+
+  const emails = value
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.length > 0);
+
+  return [...new Set(emails)];
+};
+
+export const getFoundathonAdminEmail = () => {
+  const [adminEmail] = getFoundathonAdminEmails();
+  return adminEmail ?? null;
 };
 
 export const isFoundathonAdminEmail = (email: string | null | undefined) => {
-  const adminEmail = getFoundathonAdminEmail();
-  if (!adminEmail || !email) {
+  if (isFoundathonSuperAdminEmail(email)) {
+    return true;
+  }
+
+  if (!email) {
     return false;
   }
 
-  return email.trim().toLowerCase() === adminEmail;
+  const normalizedEmail = normalizeEmail(email);
+  const adminEmails = getFoundathonAdminEmails();
+  if (adminEmails.length === 0) {
+    return false;
+  }
+
+  return adminEmails.includes(normalizedEmail);
 };
 
 export const getProblemLockTokenSecret = () =>

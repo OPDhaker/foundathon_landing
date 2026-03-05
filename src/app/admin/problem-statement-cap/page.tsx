@@ -1,8 +1,12 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { isBlockedLoginEmail } from "@/server/auth/email-policy";
-import { isFoundathonAdminEmail } from "@/server/env";
 import {
+  isFoundathonAdminEmail,
+  isFoundathonSuperAdminEmail,
+} from "@/server/env";
+import {
+  getManagedReviewAdminEmails,
   getProblemStatementCap,
   getRegistrationsOpen,
 } from "@/server/problem-statements/cap-settings";
@@ -35,14 +39,18 @@ export default async function AdminProblemStatementCapPage() {
     notFound();
   }
 
-  const [initialCap, initialRegistrationsOpen] = await Promise.all([
-    getProblemStatementCap({ useCache: false }),
-    getRegistrationsOpen({ useCache: false }),
-  ]);
+  const [initialCap, initialRegistrationsOpen, initialReviewAdminEmails] =
+    await Promise.all([
+      getProblemStatementCap({ useCache: false }),
+      getRegistrationsOpen({ useCache: false }),
+      getManagedReviewAdminEmails({ useCache: false }),
+    ]);
 
   return (
     <AdminProblemStatementCapClient
       adminEmail={user.email ?? ""}
+      initialReviewAdminEmails={initialReviewAdminEmails}
+      isSuperAdmin={isFoundathonSuperAdminEmail(user.email)}
       initialCap={initialCap}
       initialRegistrationsOpen={initialRegistrationsOpen}
     />
