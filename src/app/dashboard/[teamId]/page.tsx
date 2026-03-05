@@ -25,6 +25,7 @@ import {
   useRef,
   useState,
 } from "react";
+import PresentationPreviewModal from "@/components/presentation/presentation-preview-modal";
 import { FnButton } from "@/components/ui/fn-button";
 import { InView } from "@/components/ui/in-view";
 import ModalPortal from "@/components/ui/modal-portal";
@@ -1359,17 +1360,6 @@ const snapshotMembers = (members: SrmMember[] | NonSrmMember[]) =>
 const normalizeConfirmationText = (value: string) =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
 
-const toPresentationPreviewUrl = (publicUrl: string) => {
-  const normalizedUrl = publicUrl.trim();
-  if (!normalizedUrl) {
-    return "";
-  }
-
-  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
-    normalizedUrl,
-  )}`;
-};
-
 const normalizeApprovalStatus = (
   value: string | undefined,
 ): TeamApprovalStatus | undefined => {
@@ -1556,10 +1546,6 @@ export default function TeamDashboardPage() {
   const selectedTeamTicketTheme = useMemo(
     () => getTeamTicketTheme(teamTicketThemeId),
     [teamTicketThemeId],
-  );
-  const presentationPreviewUrl = useMemo(
-    () => toPresentationPreviewUrl(presentation.publicUrl),
-    [presentation.publicUrl],
   );
   const presentationLeadEmail = useMemo(() => {
     if (teamType === "srm") {
@@ -4230,7 +4216,9 @@ export default function TeamDashboardPage() {
                             type="button"
                             tone="blue"
                             onClick={() => setShowPresentationPreview(true)}
-                            disabled={!presentationPreviewUrl}
+                            disabled={
+                              presentation.publicUrl.trim().length === 0
+                            }
                           >
                             Preview Uploaded PPT
                           </FnButton>
@@ -4470,80 +4458,12 @@ export default function TeamDashboardPage() {
         </ModalPortal>
       ) : null}
 
-      {showPresentationPreview && isPresentationSubmitted ? (
-        <ModalPortal>
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="presentation-preview-title"
-          >
-            <div className="flex h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-b-4 border-fnblue bg-background shadow-2xl">
-              <div className="flex items-start justify-between gap-3 border-b border-foreground/10 px-4 py-3 md:px-5">
-                <div>
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-fnblue">
-                    Presentation Preview
-                  </p>
-                  <h3
-                    id="presentation-preview-title"
-                    className="mt-1 text-lg font-black uppercase tracking-tight md:text-xl"
-                  >
-                    {presentation.fileName || "Uploaded PPT"}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Close presentation preview"
-                  onClick={() => setShowPresentationPreview(false)}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-foreground/20 bg-white text-foreground/70 transition-colors hover:bg-fnred/10 hover:text-fnred focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fnred/40"
-                >
-                  <X size={16} strokeWidth={2.6} />
-                </button>
-              </div>
-
-              <div className="relative flex-1 bg-slate-100">
-                {presentationPreviewUrl ? (
-                  <iframe
-                    title="Uploaded team presentation preview"
-                    src={presentationPreviewUrl}
-                    className="h-full w-full"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-6 text-center text-sm text-foreground/75">
-                    Preview is unavailable for this file right now.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-foreground/10 bg-white/85 px-4 py-3">
-                <p className="text-xs text-foreground/70">
-                  If preview does not load, open the uploaded file directly.
-                </p>
-                <div className="flex gap-2">
-                  <FnButton asChild tone="gray" size="sm">
-                    <a
-                      href={presentation.publicUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink size={16} strokeWidth={3} />
-                      Open in New Tab
-                    </a>
-                  </FnButton>
-                  <FnButton
-                    type="button"
-                    size="sm"
-                    onClick={() => setShowPresentationPreview(false)}
-                  >
-                    Close
-                  </FnButton>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
-      ) : null}
+      <PresentationPreviewModal
+        fileName={presentation.fileName}
+        isOpen={showPresentationPreview && isPresentationSubmitted}
+        onClose={() => setShowPresentationPreview(false)}
+        publicUrl={presentation.publicUrl}
+      />
 
       {showPresentationConfirm && pendingPresentationFile ? (
         <ModalPortal>

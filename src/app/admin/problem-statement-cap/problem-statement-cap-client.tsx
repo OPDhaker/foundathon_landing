@@ -8,6 +8,7 @@ type UpdateResponse = {
   cap?: number;
   error?: string;
   registrationsOpen?: boolean;
+  reviewAdminEmails?: string[];
 };
 
 type MassMailResponse = {
@@ -25,6 +26,8 @@ type MassMailResponse = {
 
 type AdminProblemStatementCapClientProps = {
   adminEmail: string;
+  initialReviewAdminEmails: string[];
+  isSuperAdmin: boolean;
   initialCap: number;
   initialRegistrationsOpen: boolean;
 };
@@ -39,15 +42,22 @@ const toParsedTestEmails = (value: string) =>
 
 export default function AdminProblemStatementCapClient({
   adminEmail,
+  initialReviewAdminEmails,
+  isSuperAdmin,
   initialCap,
   initialRegistrationsOpen,
 }: AdminProblemStatementCapClientProps) {
   const [capInput, setCapInput] = useState(String(initialCap));
   const [currentCap, setCurrentCap] = useState(initialCap);
+  const [managedReviewAdminEmails, setManagedReviewAdminEmails] = useState(
+    initialReviewAdminEmails,
+  );
+  const [reviewAdminEmailInput, setReviewAdminEmailInput] = useState("");
   const [registrationsOpen, setRegistrationsOpen] = useState(
     initialRegistrationsOpen,
   );
   const [isSavingCap, setIsSavingCap] = useState(false);
+  const [isSavingReviewAdmin, setIsSavingReviewAdmin] = useState(false);
   const [isSavingRegistrationsOpen, setIsSavingRegistrationsOpen] =
     useState(false);
   const [useTestMail, setUseTestMail] = useState(true);
@@ -62,6 +72,133 @@ export default function AdminProblemStatementCapClient({
 
     if (typeof data?.registrationsOpen === "boolean") {
       setRegistrationsOpen(data.registrationsOpen);
+    }
+
+    if (Array.isArray(data?.reviewAdminEmails)) {
+      setManagedReviewAdminEmails(data.reviewAdminEmails);
+    }
+  };
+
+  const addReviewAdminEmail = async () => {
+    if (!isSuperAdmin) {
+      toast({
+        title: "Forbidden",
+        description: "Only super admin can manage review admin emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const normalizedEmail = reviewAdminEmailInput.trim().toLowerCase();
+    if (!normalizedEmail || !EMAIL_PATTERN.test(normalizedEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Enter a valid email address to grant /admin access.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (managedReviewAdminEmails.includes(normalizedEmail)) {
+      toast({
+        title: "Already Added",
+        description: "This email already has /admin access.",
+      });
+      return;
+    }
+
+    setIsSavingReviewAdmin(true);
+
+    try {
+      const response = await fetch("/api/admin/problem-statement-cap", {
+        body: JSON.stringify({ reviewAdminEmailToAdd: normalizedEmail }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PATCH",
+      });
+
+      const data = (await response
+        .json()
+        .catch(() => null)) as UpdateResponse | null;
+
+      if (!response.ok) {
+        toast({
+          title: "Update Failed",
+          description:
+            data?.error ??
+            "Could not grant /admin access. Verify permissions and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      applySettingsFromResponse(data);
+      setReviewAdminEmailInput("");
+      toast({
+        title: "Access Granted",
+        description: `${normalizedEmail} can now access /admin.`,
+      });
+    } catch {
+      toast({
+        title: "Network Error",
+        description: "Could not reach the admin API. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingReviewAdmin(false);
+    }
+  };
+
+  const removeReviewAdminEmail = async (email: string) => {
+    if (!isSuperAdmin) {
+      toast({
+        title: "Forbidden",
+        description: "Only super admin can manage review admin emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingReviewAdmin(true);
+
+    try {
+      const response = await fetch("/api/admin/problem-statement-cap", {
+        body: JSON.stringify({ reviewAdminEmailToRemove: email }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PATCH",
+      });
+
+      const data = (await response
+        .json()
+        .catch(() => null)) as UpdateResponse | null;
+
+      if (!response.ok) {
+        toast({
+          title: "Update Failed",
+          description:
+            data?.error ??
+            "Could not remove /admin access. Verify permissions and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      applySettingsFromResponse(data);
+      toast({
+        title: "Access Removed",
+        description: `${email} no longer has /admin access.`,
+      });
+    } catch {
+      toast({
+        title: "Network Error",
+        description: "Could not reach the admin API. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingReviewAdmin(false);
     }
   };
 
@@ -387,6 +524,73 @@ export default function AdminProblemStatementCapClient({
                 : "Resume Registrations"}
             </FnButton>
           </div>
+
+          {isSuperAdmin ? (
+            <div className="mt-8 rounded-xl border border-fnblue/35 bg-fnblue/8 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-fnblue font-semibold">
+                Review Admin Access
+              </p>
+              <h2 className="mt-1 text-lg font-black uppercase tracking-tight">
+                /admin Access Control
+              </h2>
+              <p className="mt-1 text-sm text-foreground/75">
+                Add or remove emails that can access only the /admin review
+                dashboard.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="w-full rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-fnblue"
+                  onChange={(event) =>
+                    setReviewAdminEmailInput(event.target.value)
+                  }
+                  placeholder="review-admin@example.com"
+                  value={reviewAdminEmailInput}
+                />
+                <FnButton
+                  type="button"
+                  disabled={isSavingReviewAdmin}
+                  loading={isSavingReviewAdmin}
+                  loadingText="Saving..."
+                  onClick={addReviewAdminEmail}
+                >
+                  Add Email
+                </FnButton>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-foreground/15 bg-background/80 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground/75">
+                  Current Managed Emails
+                </p>
+                {managedReviewAdminEmails.length === 0 ? (
+                  <p className="mt-2 text-sm text-foreground/70">
+                    No managed review admin emails added yet.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-2">
+                    {managedReviewAdminEmails.map((email) => (
+                      <li
+                        key={email}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-foreground/15 bg-background px-3 py-2"
+                      >
+                        <span className="text-sm font-medium">{email}</span>
+                        <FnButton
+                          tone="red"
+                          type="button"
+                          disabled={isSavingReviewAdmin}
+                          loading={isSavingReviewAdmin}
+                          loadingText="Saving..."
+                          onClick={() => removeReviewAdminEmail(email)}
+                        >
+                          Remove
+                        </FnButton>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-8 rounded-xl border border-fnyellow/35 bg-fnyellow/10 p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-fnyellow font-semibold">
