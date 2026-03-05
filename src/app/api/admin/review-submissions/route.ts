@@ -11,6 +11,16 @@ type AdminAuthResult = {
   response: Response | null;
 };
 
+type StatementFilterParseResult =
+  | {
+      ok: true;
+      statement: "all" | (typeof PROBLEM_STATEMENTS)[number]["id"];
+    }
+  | {
+      error: string;
+      ok: false;
+    };
+
 const getAdminAuthErrorResponse = async (): Promise<AdminAuthResult> => {
   const context = await getRouteAuthContext();
   if (!context.ok) {
@@ -24,7 +34,9 @@ const getAdminAuthErrorResponse = async (): Promise<AdminAuthResult> => {
   return { response: null };
 };
 
-const parseStatementFilter = (request: NextRequest) => {
+const parseStatementFilter = (
+  request: NextRequest,
+): StatementFilterParseResult => {
   const statement = request.nextUrl.searchParams.get("statement");
   if (!statement || statement === "all") {
     return { ok: true, statement: "all" as const };
@@ -35,7 +47,10 @@ const parseStatementFilter = (request: NextRequest) => {
     return { error: "Invalid statement filter.", ok: false as const };
   }
 
-  return { ok: true as const, statement: normalized };
+  return {
+    ok: true as const,
+    statement: normalized as (typeof PROBLEM_STATEMENTS)[number]["id"],
+  };
 };
 
 export async function GET(request: NextRequest) {
