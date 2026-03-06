@@ -32,6 +32,7 @@ import ModalPortal from "@/components/ui/modal-portal";
 import { useMotionPreferences } from "@/components/ui/motion-preferences";
 import { useRouteProgress } from "@/components/ui/route-progress";
 import { toast } from "@/hooks/use-toast";
+import { ACCEPTED_TEAM_PAYMENT_FORM_URL } from "@/lib/accepted-team";
 import { MOTION_TRANSITIONS, MOTION_VARIANTS } from "@/lib/motion-system";
 import {
   isPresentationExtensionAllowed,
@@ -1399,7 +1400,7 @@ const getTeamApprovalStatusMeta = (status: TeamApprovalStatus) => {
       return {
         badgeClass: "border-fngreen/40 bg-fngreen/10 text-fngreen",
         description:
-          "Your team has been approved by admins. You may download your ticket from the QR icon.",
+          "Your team has been approved by admins. Complete the payment form below, then use the QR icon at the top-right of this card to open your ticket.",
         dotClass: "bg-fngreen",
         label: "Accepted",
         panelClass:
@@ -3061,6 +3062,42 @@ export default function TeamDashboardPage() {
                       <p className="mt-4 max-w-3xl text-sm leading-relaxed text-foreground/80 md:text-base font-medium">
                         {teamApprovalStatusMeta.description}
                       </p>
+                      {shouldShowAcceptedQr ? (
+                        <div className="mt-4 max-w-3xl rounded-2xl border border-fngreen/35 bg-white/85 p-4 shadow-sm">
+                          <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-fngreen">
+                            Final Step
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                            Use the payment form to complete your fee, then open
+                            the QR icon at the top-right of this Team Status
+                            card to view and download your QR Code ticket.
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <FnButton asChild tone="green" size="sm">
+                              <a
+                                href={ACCEPTED_TEAM_PAYMENT_FORM_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink size={16} strokeWidth={3} />
+                                Open Payment Form
+                              </a>
+                            </FnButton>
+                            <FnButton
+                              type="button"
+                              tone="gray"
+                              size="sm"
+                              onClick={openTeamTicketModal}
+                              disabled={
+                                isGeneratingTeamQr || teamQrGenerationError
+                              }
+                            >
+                              <QrCode size={16} strokeWidth={3} />
+                              Open QR Ticket
+                            </FnButton>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">

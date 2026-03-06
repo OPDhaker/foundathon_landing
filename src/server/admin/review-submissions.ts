@@ -342,6 +342,7 @@ export const updateAdminReviewDecision = async ({
     decision,
     problemStatementTitle,
     recipientEmail: toTrimmedString(updatedRow.registration_email),
+    teamId,
     teamName,
   });
 
