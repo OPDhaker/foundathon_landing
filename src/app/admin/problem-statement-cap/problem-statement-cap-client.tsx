@@ -47,6 +47,16 @@ export default function AdminProblemStatementCapClient({
   initialCap,
   initialRegistrationsOpen,
 }: AdminProblemStatementCapClientProps) {
+  const exportActions = [
+    {
+      href: "/api/admin/problem-statement-cap/export?dataset=accepted-team-leads",
+      label: "Accepted Team Leads",
+    },
+    {
+      href: "/api/admin/problem-statement-cap/export?dataset=accepted-srm-members",
+      label: "Accepted SRM Members",
+    },
+  ] as const;
   const [capInput, setCapInput] = useState(String(initialCap));
   const [currentCap, setCurrentCap] = useState(initialCap);
   const [managedReviewAdminEmails, setManagedReviewAdminEmails] = useState(
@@ -591,6 +601,27 @@ export default function AdminProblemStatementCapClient({
               </div>
             </div>
           ) : null}
+
+          <div className="mt-8 rounded-xl border border-fnblue/35 bg-fnblue/8 p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-fnblue font-semibold">
+              Exports
+            </p>
+            <h2 className="mt-1 text-lg font-black uppercase tracking-tight">
+              Accepted Team Downloads
+            </h2>
+            <p className="mt-1 text-sm text-foreground/75">
+              Download accepted team leads and accepted SRM participant details
+              as CSV files for offline follow-up.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              {exportActions.map((action) => (
+                <FnButton key={action.href} asChild size="sm" tone="gray">
+                  <a href={action.href}>Download {action.label}</a>
+                </FnButton>
+              ))}
+            </div>
+          </div>
 
           <div className="mt-8 rounded-xl border border-fnyellow/35 bg-fnyellow/10 p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-fnyellow font-semibold">
