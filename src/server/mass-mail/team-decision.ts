@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { ACCEPTED_TEAM_PAYMENT_FORM_URL } from "@/lib/accepted-team";
 import { getFoundathonResendApiKey, getFoundathonSiteUrl } from "@/server/env";
 
 const DEFAULT_SITE_URL = "https://foundathon.thefoundersclub.tech";
@@ -10,6 +11,7 @@ export type SendTeamDecisionMailInput = {
   decision: TeamDecisionMailDecision;
   problemStatementTitle: string | null;
   recipientEmail: string | null | undefined;
+  teamId: string;
   teamName: string | null;
 };
 
@@ -58,7 +60,7 @@ const getDecisionTheme = (decision: TeamDecisionMailDecision) =>
         accentSoft: "#EAF8F0",
         ctaLabel: "Open Team Dashboard",
         heroMessage:
-          "Your team made it to the final round. Time to gear up and ship big.",
+          "Your team made it to the next round. Time to gear up and ship big.",
         heroTitle: "Entry Confirmed",
       }
     : {
@@ -74,15 +76,17 @@ export const getTeamDecisionEmailContent = ({
   decision,
   problemStatementTitle,
   siteUrl,
+  teamId,
   teamName,
 }: {
   decision: TeamDecisionMailDecision;
   problemStatementTitle: string | null;
   siteUrl: string;
+  teamId: string;
   teamName: string | null;
 }) => {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
-  const signInUrl = `${normalizedSiteUrl}/register`;
+  const dashboardUrl = `${normalizedSiteUrl}/dashboard/${encodeURIComponent(teamId)}`;
   const displayTeamName = teamName ?? "Foundathon Team";
   const displayProblemStatement = problemStatementTitle ?? "Not assigned";
   const escapedTeamName = escapeHtml(displayTeamName);
@@ -100,8 +104,11 @@ export const getTeamDecisionEmailContent = ({
       `Problem Statement: ${displayProblemStatement}`,
       `Registration Status: ${decisionLabel}`,
       "",
-      "Please sign in to your dashboard to check final-round instructions and updates.",
-      `Sign in here: ${signInUrl}`,
+      "Please complete your payment using the Google Form below to confirm your slot:",
+      ACCEPTED_TEAM_PAYMENT_FORM_URL,
+      "",
+      "After signing in, look for the QR icon at the top-right of the Team Status card on your dashboard to open and download your Team Entrance ticket.",
+      `Open your team dashboard here: ${dashboardUrl}`,
       "",
       "Regards,",
       "Foundathon Team",
@@ -137,17 +144,32 @@ export const getTeamDecisionEmailContent = ({
                     </tr>
                   </table>
                   <p style="margin:20px 0 0 0;font-size:15px;color:#334155;">
-                    Please sign in to your dashboard for final instructions and ticketing updates.
+                    Please complete your payment using the Google Form below to confirm your slot.
+                  </p>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:16px;background:#F8FAFC;border:1px solid #DCFCE7;border-radius:12px;">
+                    <tr>
+                      <td style="padding:16px 18px;font-size:14px;line-height:1.7;color:#1E293B;">
+                        <strong>Payment Form:</strong>
+                        <a href="${ACCEPTED_TEAM_PAYMENT_FORM_URL}" target="_blank" rel="noopener noreferrer" style="color:${theme.accent};font-weight:700;text-decoration:none;">
+                          Open Google Form
+                        </a>
+                        <br />
+                        Link: ${ACCEPTED_TEAM_PAYMENT_FORM_URL}
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:14px 0 0 0;font-size:15px;color:#334155;">
+                    After signing in, look for the <strong>QR icon at the top-right of the Team Status card</strong> on your dashboard to open and download your <strong>Team Entrance ticket</strong>.
                   </p>
                 </td>
               </tr>
               <tr>
                 <td style="padding:0 30px 30px 30px;font-family:'Segoe UI',Arial,sans-serif;">
-                  <a href="${signInUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${theme.accent};color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">
+                  <a href="${dashboardUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${theme.accent};color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">
                     ${theme.ctaLabel}
                   </a>
                   <p style="margin:16px 0 0 0;font-size:12px;color:#64748B;">
-                    If the button does not work, copy and open this link: ${signInUrl}
+                    If the button does not work, copy and open this link: ${dashboardUrl}
                   </p>
                   <p style="margin:20px 0 0 0;font-size:14px;color:#334155;">Regards,<br /><strong>Foundathon Team</strong></p>
                 </td>
@@ -176,7 +198,7 @@ export const getTeamDecisionEmailContent = ({
     `Registration Status: ${decisionLabel}`,
     "",
     "We appreciate your effort and hope to see you in future editions.",
-    `Sign in here: ${signInUrl}`,
+    `Open your team dashboard here: ${dashboardUrl}`,
     "",
     "Regards,",
     "Foundathon Team",
@@ -219,11 +241,11 @@ export const getTeamDecisionEmailContent = ({
             </tr>
             <tr>
               <td style="padding:0 30px 30px 30px;font-family:'Segoe UI',Arial,sans-serif;">
-                <a href="${signInUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${theme.accent};color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">
+                <a href="${dashboardUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${theme.accent};color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">
                   ${theme.ctaLabel}
                 </a>
                 <p style="margin:16px 0 0 0;font-size:12px;color:#64748B;">
-                  If the button does not work, copy and open this link: ${signInUrl}
+                  If the button does not work, copy and open this link: ${dashboardUrl}
                 </p>
                 <p style="margin:20px 0 0 0;font-size:14px;color:#334155;">Regards,<br /><strong>Foundathon Team</strong></p>
               </td>
@@ -256,6 +278,7 @@ export const sendTeamDecisionMail = async ({
   decision,
   problemStatementTitle,
   recipientEmail,
+  teamId,
   teamName,
 }: SendTeamDecisionMailInput): Promise<SendTeamDecisionMailResult> => {
   const resolvedRecipient = toNormalizedEmail(recipientEmail);
@@ -283,6 +306,7 @@ export const sendTeamDecisionMail = async ({
     decision,
     problemStatementTitle,
     siteUrl,
+    teamId,
     teamName,
   });
 

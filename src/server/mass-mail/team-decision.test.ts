@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ACCEPTED_TEAM_PAYMENT_FORM_URL } from "@/lib/accepted-team";
 
 const mocks = vi.hoisted(() => ({
   getFoundathonResendApiKey: vi.fn(),
@@ -20,6 +21,8 @@ vi.mock("resend", () => ({
 }));
 
 describe("team decision mail service", () => {
+  const teamId = "11111111-1111-4111-8111-111111111111";
+
   beforeEach(() => {
     vi.resetModules();
     mocks.getFoundathonResendApiKey.mockReset();
@@ -37,6 +40,7 @@ describe("team decision mail service", () => {
       decision: "accepted",
       problemStatementTitle: "Localized AI Skills Training Platform",
       siteUrl: "https://example.com",
+      teamId,
       teamName: "Pitch Panthers",
     });
 
@@ -44,9 +48,15 @@ describe("team decision mail service", () => {
     expect(content.text).toContain("Pitch Panthers");
     expect(content.text).toContain("Localized AI Skills Training Platform");
     expect(content.text).toContain("Registration Status: ACCEPTED");
+    expect(content.text).toContain(ACCEPTED_TEAM_PAYMENT_FORM_URL);
+    expect(content.text).toContain("top-right of the Team Status card");
+    expect(content.text).toContain(`https://example.com/dashboard/${teamId}`);
     expect(content.html).toContain("Pitch Panthers");
     expect(content.html).toContain("Localized AI Skills Training Platform");
     expect(content.html).toContain("Registration Status:</strong> ACCEPTED");
+    expect(content.html).toContain(ACCEPTED_TEAM_PAYMENT_FORM_URL);
+    expect(content.html).toContain("top-right of the Team Status card");
+    expect(content.html).toContain(`https://example.com/dashboard/${teamId}`);
   });
 
   it("builds rejected mail content with team and statement details", async () => {
@@ -55,6 +65,7 @@ describe("team decision mail service", () => {
       decision: "rejected",
       problemStatementTitle: "AI Matchmaking for Cross-Industry Innovation",
       siteUrl: "https://example.com",
+      teamId,
       teamName: "Board Breakers",
     });
 
@@ -64,11 +75,13 @@ describe("team decision mail service", () => {
       "AI Matchmaking for Cross-Industry Innovation",
     );
     expect(content.text).toContain("Registration Status: REJECTED");
+    expect(content.text).toContain(`https://example.com/dashboard/${teamId}`);
     expect(content.html).toContain("Board Breakers");
     expect(content.html).toContain(
       "AI Matchmaking for Cross-Industry Innovation",
     );
     expect(content.html).toContain("Registration Status:</strong> REJECTED");
+    expect(content.html).toContain(`https://example.com/dashboard/${teamId}`);
   });
 
   it("returns validation error when registration email is invalid", async () => {
@@ -77,6 +90,7 @@ describe("team decision mail service", () => {
       decision: "accepted",
       problemStatementTitle: "PS",
       recipientEmail: "not-an-email",
+      teamId,
       teamName: "Team A",
     });
 
@@ -98,6 +112,7 @@ describe("team decision mail service", () => {
       decision: "accepted",
       problemStatementTitle: "PS",
       recipientEmail: "team@example.com",
+      teamId,
       teamName: "Team A",
     });
 
@@ -117,6 +132,7 @@ describe("team decision mail service", () => {
       decision: "accepted",
       problemStatementTitle: "PS",
       recipientEmail: "TEAM@EXAMPLE.COM",
+      teamId,
       teamName: "Team A",
     });
 
@@ -130,6 +146,7 @@ describe("team decision mail service", () => {
     expect(call.to).toBe("team@example.com");
     expect(call.subject).toMatch(/Accepted/i);
     expect(call.text).toContain("Team A");
+    expect(call.text).toContain(`https://example.com/dashboard/${teamId}`);
   });
 
   it("normalizes registration email before sending", async () => {
@@ -138,6 +155,7 @@ describe("team decision mail service", () => {
       decision: "accepted",
       problemStatementTitle: "PS",
       recipientEmail: "Different-Team@Example.Com",
+      teamId,
       teamName: "Team A",
     });
 
@@ -159,6 +177,7 @@ describe("team decision mail service", () => {
       decision: "rejected",
       problemStatementTitle: "PS",
       recipientEmail: "team@example.com",
+      teamId,
       teamName: "Team A",
     });
 

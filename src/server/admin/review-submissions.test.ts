@@ -226,6 +226,13 @@ describe("admin review submissions service", () => {
 
     expect(result.data.approvalStatus).toBe("accepted");
     expect(update).toHaveBeenCalledWith({ is_approved: "ACCEPTED" });
+    expect(mocks.sendTeamDecisionMail).toHaveBeenCalledWith({
+      decision: "accepted",
+      problemStatementTitle: "PS",
+      recipientEmail: "team@example.com",
+      teamId: "11111111-1111-4111-8111-111111111111",
+      teamName: "Team One",
+    });
     expect(result.data.mail).toEqual({
       recipient: "team@example.com",
       sent: true,
@@ -306,6 +313,13 @@ describe("admin review submissions service", () => {
     }
 
     expect(result.data.approvalStatus).toBe("rejected");
+    expect(mocks.sendTeamDecisionMail).toHaveBeenCalledWith({
+      decision: "rejected",
+      problemStatementTitle: "PS",
+      recipientEmail: "team@example.com",
+      teamId: "11111111-1111-4111-8111-111111111111",
+      teamName: "Team One",
+    });
     expect(result.data.mail.sent).toBe(false);
     expect(result.data.mail.error).toContain("provider down");
   });
